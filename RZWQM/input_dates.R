@@ -1,12 +1,16 @@
+#new ending time is 48985 min
+48985/(24*60) #34.02 days
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/nick_murphy_experiments'
-hours <- rep(seq(0,23, by=1), 27)
-days <- do.call(c, lapply(as.character(format.Date(seq.Date(from=as.Date('2020/1/1'), to=as.Date('2020/1/27'), by='day'), format='%d/%m/%Y')), function(x) rep(x, 24)))
+hours <- rep(seq(0,23, by=1), 34) #changed to 34 on 8/4/21
+days <- do.call(c, lapply(as.character(format.Date(seq.Date(from=as.Date('2020/1/1'), to=as.Date('2020/2/3'), by='day'), format='%d/%m/%Y')), function(x) rep(x, 24))) #changed ending date to 2/3/20 on 8/4/21
 df_climate <- data.frame(date=days, hour=hours, airtemp=22, wind=0, radiation=0, rel_humidity=45, precip=0)
 df_climate$precip[df_climate$date=='01/01/2020' & df_climate$hour==0] <- 190.8 #actually 0-40 minutes of experiment
 df_climate$precip[df_climate$date=='02/01/2020' & df_climate$hour==1] <- 152.4 #actually 1480-1520 minutes of experiment
 df_climate$precip[df_climate$date=='10/01/2020' & df_climate$hour==1] <- 152.4 #actually 12998-13038 minutes of experiment
 df_climate$precip[df_climate$date=='24/01/2020' & df_climate$hour==0] <- 152.4 #actually 12998-13038 minutes of experiment
-write.csv(df_climate, file.path(workDir, 'climate_input_data.csv'), row.names = FALSE)
+write.csv(df_climate, file.path(workDir, 'climate_input_data_v2.csv'), row.names = FALSE) #wrote v2 on 8/4/21
+
+writeClipboard(as.character(df_climate$date)) #to paste into RZWQM climate input file
 
 #soil theta assumptions
 theta_fc_est <- function(theta_s, theta_r, Ks, n) {
