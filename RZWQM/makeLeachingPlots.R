@@ -4,6 +4,7 @@ library(extrafontdb)
 loadfonts(device = 'win')
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/tests'
 FiguresDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries/Figures'
+MBresultsDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries'
 
 #for scenario names:
 #v1 is soil properties from textural class look-up tables in RZWQM
@@ -16,6 +17,27 @@ cumulativeFluxes <- function(projectName, soil) {
   leachingDF <- read.table(file.path(x, soil, 'CLEACH.OUT'), col.names = c('DAY', 'H', 'CA', 'NA', 'MG', 'CL', 'HCO3', 'SO4', 'AL', 'NO3-N', 'NH4-N', 'CO3', 'UREA-N', 'PEST #1', 'PEST #2', 'PEST #3'), header = FALSE, skip=6)
   leachingDF$date <- seq(as.Date("2016/10/1"), as.Date("2017/4/30"), "days")
   leachingDF
+  })
+  names(result) <- basename(scenarioDirs)
+  result
+}
+
+# dailyFluxes <- function(projectName, soil) {
+#   scenarioDirs <- list.dirs(file.path(workDir, projectName), recursive = FALSE)
+#   result <- lapply(scenarioDirs, function(x) {
+#     leachingDF <- read.table(file.path(x, soil, 'DAILY.PLT'), col.names = c('DAY', 'ACCUMULATED PRECIPITATION (CM)',  'ACCUMULATED INFILTRATION (CM)', 'TEMP BREAK THROUGH CURVE (C)', 'WATER FLUX INTO GW (CM/DAY)', 'ACTUAL EVAPORATION (CM)', 'ACTUAL TRANSPIRATION (CM)', 'ACTUAL EVAPOTRANSPIRATION (CM)', 'TOTAL NO3-N IN PROFILE (KG/HA)', 'TOTAL USABLE NITROGEN (KG/HA)', 'NO3-N MASS OUT DRAIN (UG/CM^2)', 'NO3 FLUX INTO GW (UG/CM^2/DAY)', 'MINERALIZATION (KG/HA)', 'VOLATILIZATION (KG/HA)', 'NITRIFICATION (KG/HA)', 'PLANT HEIGHT (CM)', 'DEPTH OF ROOTS (CM)', 'WATER STRESS', 'LEAF BIOMASS (G)', 'STEM BIOMASS (G)', 'ROOT BIOMASS'), header = FALSE, skip=156)
+#     leachingDF$date <- seq(as.Date("2016/10/1"), as.Date("2017/4/30"), "days")
+#     leachingDF
+#   })
+#   names(result) <- basename(scenarioDirs)
+#   result
+# }
+
+dailyFluxes <- function(projectName) {
+  fnames <- list.files(file.path(MBresultsDir, projectName), recursive = FALSE)
+  result <- lapply(fnames, function(x) {
+    MB_df <- read.csv(x, stringsAsFactors = FALSE)
+    leachingDF
   })
   names(result) <- basename(scenarioDirs)
   result
@@ -79,3 +101,12 @@ makeFigure('fine_KSSL_10ppm.tif', FineSHR_KSSL_10ppm, ymax = 124, ResidualNO3 = 
 makeFigure('coarse_KSSL_30ppm.tif', CoarseSHR_KSSL_30ppm, ymax = 255, ResidualNO3 = 205.1, makeLegend = TRUE, FigLab = 'a', FigLabHt = 250, width = 4, startime = '2016-10-01', xmax = as.Date('2017-05-03'))
 makeFigure('loamy_KSSL_30ppm.tif', LoamySHR_KSSL_30ppm, ymax = 255, ResidualNO3 = 192.2, FigLab = 'b', FigLabHt = 250, width = 2.8, startime = '2016-12-20', xmax = as.Date('2017-05-06'))
 makeFigure('fine_KSSL_30ppm.tif', FineSHR_KSSL_30ppm, ymax = 255, ResidualNO3 = 179.3, FigLab = 'c', FigLabHt = 250, width = 2.8, startime = '2016-12-20', xmax = as.Date('2017-05-06'))
+
+#daily fluxes
+CoarseSHR_SSURGO_10ppm_daily <- dailyFluxes('10ppmNO3', 'CoarseSHR_v2')
+LoamySHR_SSURGO_10ppm_daily <- dailyFluxes('10ppmNO3', 'LoamySHR_v2')
+FineSHR_SSURGO_10ppm <- dailyFluxes('10ppmNO3', 'FineSHR_v2')
+
+CoarseSHR_SSURGO_10ppm_daily$`Control CC`$MINERALIZATION..KG.HA.
+
+coarse_min_totals <- lapply(CoarseSHR_SSURGO_10ppm_daily, function(x) sum(x$MINERALIZATION..KG.HA.))
