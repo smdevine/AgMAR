@@ -2,6 +2,7 @@ options(max.print = 15000)
 options(width=130)
 # workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/InitialTest_v2/Parlier_1983_2021test/CoarseSHR_automation'
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/BaseRuns/CoarseSHR'
+workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/FloodRuns_v1/LoamySHR'
 #ClimateRuns\Parlier\BaseRuns\CoarseSHR
 input <- readLines(file.path(workDir, 'RZWQM_input.DAT'))
 class(input)
@@ -25,6 +26,7 @@ end_year <- 2020
 years <- start_year:end_year
 plantings <- length(1984:2020)
 
+#TO-DO: add cereal rye placeholder, varying pop. density to get desired effect and allowing for winter irrigation events
 
 #turn planting plan into function
 corn_line1 <- '1  15   4  1984  20.0   3 40000.0   0 -99.0   10 -99.0   -99'
@@ -119,7 +121,7 @@ tillage_plan
 #[7] irrigation interval limit amount(default=0)
 #[8] irrigation interval time in years(default=0)
 # the number of irrigation operations is calculated by the function
-writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='0  0  0.0  100.0  15.0  0.0  0', cornADtrigger1='0.6', cornDaystrigger1='3', cornDaystrigger2='60', cornADtrigger2='0.5', tomADtrigger1='0.8', tomDaystrigger1='3', tomADtrigger2='0.6', tomDaystrigger2='84', tomADtrigger3='0.4', tomDaystrigger3='135', tomFilltrigger3='0.75', IrrAppPlanting=1.25) {
+writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='0  0  0.0  100.0  15.0  0.0  0', cornADtrigger1='0.6', cornDaystrigger1='3', cornDaystrigger2='60', cornADtrigger2='0.5', tomADtrigger1='0.8', tomDaystrigger1='3', tomADtrigger2='0.6', tomDaystrigger2='84', tomADtrigger3='0.4', tomDaystrigger3='135', tomFilltrigger3='0.75', IrrAppPlanting=1.25, flood_month='1', flood_days=c('15', '19', '23', '27'), flood_app=15.0, wet_yrs) {
   years <- start_year:end_year
   plantings <- length(years)
   IrrPlan <- do.call(c, lapply(years, function(x) {
@@ -145,21 +147,27 @@ writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='
       corn_line1 <- paste('1  1  2  1 16 4', x, '16 4', x, '0 0.0  2.0', sep=' ') #date is 4/16
       corn_line2 <- '1' #not sure what this refers to
       corn_line3 <- paste('16  4', x, sep = '  ')
-      c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))
+        if(x%in%wet_yrs) { #left off here to fix this on 12/21/21
+        c(paste('1  2  2  2', flood_days[1], flood_month, x, '16  4', x, '0 0.0  2.0', sep=' '), '5', paste(flood_days[1], flood_month, x, sep = '  '), paste(flood_days[2], flood_month, x, sep = '  '), paste(flood_days[3], flood_month, x, sep = '  '), paste(flood_days[4], flood_month, x, sep = '  '), corn_line3, '5', paste(as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(IrrAppPlanting))) # the '5' denotes 5 irrigation dates
+      } else {c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))} 
     } else {
       tom_line1 <- paste('2  1  2  1 16 4', x, '16 4', x, '0 0.0  2.0', sep=' ') #date is 4/16
       tom_line2 <- '1' #not sure what this refers to
-      tom_line3 <- paste('16  4', x, sep = ' ') 
-      c(tom_line1, tom_line2, tom_line3, as.character(IrrAppPlanting))
+      tom_line3 <- paste('16  4', x, sep = ' ')
+        if(x%in%wet_yrs) {
+          c(paste('2  2  2  2', flood_days[1], flood_month, x, '16  4', x, '0 0.0  2.0', sep=' '), '5', paste(flood_days[1], flood_month, x, sep = '  '), paste(flood_days[2], flood_month, x, sep = '  '), paste(flood_days[3], flood_month, x, sep = '  '), paste(flood_days[4], flood_month, x, sep = '  '), tom_line3, '5', paste(as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(IrrAppPlanting)))
+      } else {c(tom_line1, tom_line2, tom_line3, as.character(IrrAppPlanting))}
     }
   })
   )
   c(paste(length(years)*2, irrigationAssumptions, sep = '  '), IrrPlan, IrrPlan2)
 }
-Irr_plan <- writeIrrPlan()
+wet_years <- c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994") #as determined in get_CIMIS.R for Parlier dataset
+Irr_plan <- writeIrrPlan(flood_month = '4', wet_yrs = wet_years)
 Irr_plan
 
 #write mgmt details to file
+workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/FloodRuns_v1/LoamySHR'
 mgmt_output <- file(file.path(workDir, 'RZWQM.DAT'), 'w')
 writeLines(section1, con = mgmt_output)
 writeLines(planting_data, con = mgmt_output)
