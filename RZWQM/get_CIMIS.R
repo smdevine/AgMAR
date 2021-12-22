@@ -199,7 +199,17 @@ writeClipboard(as.character(parlier_all_reformatted_final$relHumidity))
 writeClipboard(as.character(parlier_all_reformatted_final$precip_mm))
 
 writeClipboard(c('15/04/1984', '15/04/1985'))
+
+#read-in data to identify wet years
+parlier_all_reformatted_final <- read.csv(file.path(workDir, 'Parlier_Stn39', 'parlier_1983_2021cimisQC.csv'), stringsAsFactors = FALSE)
+precip_by_year <- data.frame(precip_mm=tapply(parlier_all_reformatted_final$precip_mm, parlier_all_reformatted_final$year, sum))
+precip_by_year[order(precip_by_year$precip_mm, decreasing = TRUE), ]
+wet_years <- row.names(precip_by_year)[order(precip_by_year[,1], decreasing = TRUE)][1:10]
+
 #now do this for other CIMIS stations
+
+
+
 
 #orginal climate test dataset production
 #combine 2016-17 read-in
