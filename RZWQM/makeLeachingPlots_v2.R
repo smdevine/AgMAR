@@ -3,13 +3,13 @@ library(extrafontdb)
 # font_import() #only needs to be done one time after updating and re-installing R and moving and updating packages
 loadfonts(device = 'win')
 # workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/InitialTest_v2'
-workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier'
+workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
 FiguresDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries/Figures'
 MBresultsDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries'
 
 
-cumulativeFluxes <- function(projectName, soil) {
-  scenarioDirs <- list.dirs(file.path(workDir, projectName), recursive = FALSE)
+cumulativeFluxes <- function(station, projectName, soil) {
+  scenarioDirs <- list.dirs(file.path(workDir, station, projectName), recursive = FALSE)
   result <- lapply(scenarioDirs, function(x) {
   leachingDF <- read.table(file.path(x, soil, 'CLEACH.OUT'), col.names = c('DAY', 'H', 'CA', 'NA', 'MG', 'CL', 'HCO3', 'SO4', 'AL', 'NO3-N', 'NH4-N', 'CO3', 'UREA-N', 'PEST #1', 'PEST #2', 'PEST #3'), header = FALSE, skip=6)
   leachingDF$date <- seq(as.Date("2016/10/1"), as.Date("2017/4/30"), "days")
@@ -31,14 +31,19 @@ cumulativeFluxes <- function(projectName, soil) {
 # }
 
 
-dailyReport<- function(projectName, soil) {
-  leachingDF <- read.table(file.path(workDir, projectName, soil, 'DAILY.PLT'), col.names = c('DAY', 'ACCUMULATED PRECIPITATION (CM)',  'ACCUMULATED INFILTRATION (CM)', 'TEMP BREAK THROUGH CURVE (C)', 'WATER FLUX INTO GW (CM/DAY)', 'ACTUAL EVAPORATION (CM)', 'ACTUAL TRANSPIRATION (CM)', 'SURFACE MULCH MASS (KG/HA)', 'TOTAL NO3-N IN PROFILE (KG/HA)', 'NO3 FLUX INTO GW (UG/CM^2/DAY)', 'NO3 BREAK THROUGH (MG/L)', 'MINERALIZATION (KG/HA)', 'LEAF AREA INDEX', 'PLANT HEIGHT (CM)', 'PLANT AREA COVER (%)', 'DEPTH OF ROOTS (CM)', 'WATER STRESS', 'TEMPERATURE STRESS', 'NUTRIENT STRESS', 'NUMBER OF LIVE PLANTS', 'TOT ABOVE GRD BIOMASS (KG/HA)'), header = FALSE, skip=156)
+dailyReport<- function(station, projectName, soil) {
+  leachingDF <- read.table(file.path(workDir, station, projectName, soil, 'DAILY.PLT'), col.names = c('DAY', 'ACCUMULATED PRECIPITATION (CM)',  'ACCUMULATED INFILTRATION (CM)', 'TEMP BREAK THROUGH CURVE (C)', 'WATER FLUX INTO GW (CM/DAY)', 'ACTUAL EVAPORATION (CM)', 'ACTUAL TRANSPIRATION (CM)', 'SURFACE MULCH MASS (KG/HA)', 'TOTAL NO3-N IN PROFILE (KG/HA)', 'NO3 FLUX INTO GW (UG/CM^2/DAY)', 'NO3 BREAK THROUGH (MG/L)', 'MINERALIZATION (KG/HA)', 'LEAF AREA INDEX', 'PLANT HEIGHT (CM)', 'PLANT AREA COVER (%)', 'DEPTH OF ROOTS (CM)', 'WATER STRESS', 'TEMPERATURE STRESS', 'NUTRIENT STRESS', 'NUMBER OF LIVE PLANTS', 'TOT ABOVE GRD BIOMASS (KG/HA)'), header = FALSE, skip=156)
   leachingDF$date <- seq(as.Date("1983/10/1"), as.Date("2020/10/1"), "days")
   leachingDF$year <- format.Date(leachingDF$date, '%Y')
   leachingDF
 }
 
-dailyReport_df <- dailyReport(projectName = 'FloodRuns_v1', 'LoamySHR')
+dailyReport_df <- dailyReport(station = 'Parlier', projectName = 'BaseRuns', 'Willows')
+plot_window <- 1:4000
+plot(dailyReport_df$date[plot_window], dailyReport_df$NUTRIENT.STRESS[plot_window], type = 'l')
+plot(dailyReport_df$date[plot_window], dailyReport_df$WATER.STRESS[plot_window], type = 'l')
+plot(dailyReport_df$date[plot_window], dailyReport_df$LEAF.AREA.INDEX[plot_window], type = 'l')
+
 head(dailyReport_df)
 colnames(dailyReport_df)
 # summary(dailyReport_df$TEMP.BREAK.THROUGH.CURVE..C.)
@@ -77,8 +82,7 @@ plot(dailyReport_df$date, dailyReport_df$MINERALIZATION..KG.HA., type='l')
 plot(dailyReport_df$date, dailyReport_df$TOT.ABOVE.GRD.BIOMASS..KG.HA., type='l')
 plot(dailyReport_df$date, dailyReport_df$NUMBER.OF.LIVE.PLANTS, type='l')
 plot(dailyReport_df$date, dailyReport_df$WATER.FLUX.INTO.GW..CM.DAY., type='l')
-plot(dailyReport_df$date, dailyReport_df$NUTRIENT.STRESS, type = 'l')
-plot(dailyReport_df$date, dailyReport_df$WATER.STRESS, type = 'l')
+
 plot(dailyReport_df$date, dailyReport_df$SURFACE.MULCH.MASS..KG.HA., type = 'l')
 plot(dailyReport_df$date, dailyReport_df$TOTAL.NO3.N.IN.PROFILE..KG.HA., type = 'l')
 plot(dailyReport_df$date, dailyReport_df$ACTUAL.EVAPORATION..CM., type = 'l')
@@ -86,8 +90,11 @@ plot(dailyReport_df$date, dailyReport_df$ACTUAL.TRANSPIRATION..CM., type = 'l')
 plot(dailyReport_df$date, dailyReport_df$TEMP.BREAK.THROUGH.CURVE..C., type = 'l')
 plot(dailyReport_df$date, dailyReport_df$NO3.BREAK.THROUGH..MG.L., type = 'l')
 
+plot_window <- 1:2000
+plot(dailyReport_df$date[plot_window], dailyReport_df$DEPTH.OF.ROOTS..CM.[plot_window], type = 'l')
 
 tapply(dailyReport_df$MINERALIZATION..KG.HA., dailyReport_df$year, sum)
+tapply(dailyReport_df$WATER.FLUX.INTO.GW..CM.DAY., dailyReport_df$year, sum)
 tapply(dailyReport_df$NO3.FLUX.INTO.GW..UG.CM.2.DAY., dailyReport_df$year, function(x) sum(x)/10)
 as.data.frame(tapply(dailyReport_df$NUTRIENT.STRESS, dailyReport_df$year, function(x) sum(x < 0.9 & x > 0)))
 
@@ -96,8 +103,8 @@ as.Date('1984-07-22', format='%Y-%m-%d')
 dailyReport_df[dailyReport_df$date==as.Date('1984-07-22', format='%Y-%m-%d'),]
 
 
-overall_results <- function(projectName, soil) {
-  input <- readLines(file.path(workDir, projectName, soil, 'RZWQM.OUT'), n=2000)
+overall_results <- function(station, projectName, soil) {
+  input <- readLines(file.path(workDir, station, projectName, soil, 'RZWQM.OUT'), n=2000)
   initial_soilC <- input[grepl('INITAL TOTAL SOIL C KG C/HA:', input)]
   initial_soilC <- as.numeric(unlist(strsplit(initial_soilC, ':'))[2]) #in kg C ha-1
   final_soilC <- input[grepl('FINAL  TOTAL SOIL C KG C/HA:', input)]
@@ -131,12 +138,49 @@ overall_results <- function(projectName, soil) {
   result <- data.frame(initial_totalsoilMgC_ha=initial_soilC/1000, final_totalsoilMgC_ha=final_soilC/1000, initial_totalsoilkgN_ha=initial_soilN, final_totalsoilkgN_ha=final_soilN, denitrification_kgN_ha=denitrification, NO3_leached_kgN_ha=NO3_leaching, fert_app_kgN_ha=fert_app, N_min_kgN_ha=N_min, N_imm_kgN_ha=N_imm, precip_cm=precip, irrigation_cm=irr, runoff_cm=runoff, evap_cm=evap, trans_cm=trans, DP_cm=DP)
   print(result)
 }
-overall_results(projectName = 'BaseRuns', soil = 'CoarseSHR')
-overall_results(projectName = 'SteadyStateRuns', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'BaseRuns', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'SteadyStateRuns', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Jan7d', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Jan3d', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Mar7d', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Mar3d', soil = 'CoarseSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_21d', soil = 'CoarseSHR')
 
-overall_results(projectName = 'BaseRuns', soil = 'LoamySHR')
-overall_results(projectName = 'SteadyStateRuns', soil = 'LoamySHR')
-overall_results(projectName = 'FloodRuns_v1', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'BaseRuns', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'SteadyStateRuns', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Jan7d', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Jan3d', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Mar7d', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Mar3d', soil = 'LoamySHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_21d', soil = 'LoamySHR')
+
+overall_results(station = 'Parlier', projectName = 'BaseRuns', soil = 'FineSHR')
+overall_results(station = 'Parlier', projectName = 'SteadyStateRuns', soil = 'FineSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Jan7d', soil = 'FineSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Jan3d', soil = 'FineSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Mar7d', soil = 'FineSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_Mar3d', soil = 'FineSHR')
+overall_results(station = 'Parlier', projectName = 'AgMAR_21d', soil = 'FineSHR')
+
+#additional soils
+
+overall_results('Parlier', 'BaseRuns', 'Capay')
+overall_results('Parlier', 'BaseRuns', 'Cerini')
+overall_results('Parlier', 'BaseRuns', 'Clear Lake') #196 cm runoff, only 1410 cm irrigation
+overall_results('Parlier', 'BaseRuns', 'Colpien')
+overall_results('Parlier', 'BaseRuns', 'Delhi')
+overall_results('Parlier', 'BaseRuns', 'Hesperia')
+overall_results('Parlier', 'BaseRuns', 'Milham')
+overall_results('Parlier', 'BaseRuns', 'Panoche')
+overall_results('Parlier', 'BaseRuns', 'Tehama')
+overall_results('Parlier', 'BaseRuns', 'Tujunga')
+overall_results('Parlier', 'BaseRuns', 'Tulare')
+overall_results('Parlier', 'BaseRuns', 'Wasco')
+overall_results('Parlier', 'BaseRuns', 'Willows')
+overall_results('Parlier', 'BaseRuns', 'Yolo')
+
+#need to calculate similar results as to that produced by overall_results but segmented by growing vs. dormant seasonal totals
+
 #calculate daily net mineralization
 # projectName <- 'Parlier_1983_2021test'
 # soil <- 'CoarseSHR_automation'
@@ -168,8 +212,8 @@ tapply(n_mbl$net_min_kg_ha, n_mbl$month, sum)
 table(n_mbl$month[n_mbl$net_min_kg_ha < 0])
 
 #harvest data
-harvest_results <- function(projectName, soil) {
-  input <- readLines(file.path(workDir, projectName, soil, 'MANAGE.OUT'))
+harvest_results <- function(station, projectName, soil) {
+  input <- readLines(file.path(workDir, station, projectName, soil, 'MANAGE.OUT'))
   harvest_dates <- input[which(grepl('DSSAT Crop Harvest', input))+1]
   harvest_dates <- strsplit(harvest_dates, '-----')
   harvest_dates <- sapply(harvest_dates, function(x) x[1])
@@ -196,7 +240,29 @@ harvest_results <- function(projectName, soil) {
   harvest_info$date_harvest <- as.Date(paste0(harvest_info$year, '-', harvest_info$month, '-', harvest_info$day))
   harvest_info[,1:3] <- NULL
   harvest_info <- harvest_info[,c(ncol(harvest_info), 1:(ncol(harvest_info)-1))]
-  print(harvest_info)
+  # print(harvest_info)
+  harvest_info
 }
-harvest_df <- harvest_results(projectName = 'BaseRuns', soil = 'LoamySHR')
-harvest_results(projectName = 'SteadyStateRuns', soil = 'LoamySHR')
+harvest_loamy_base <- harvest_results(station = 'Parlier', projectName = 'BaseRuns', soil = 'LoamySHR')
+
+harvest_fine_base <- harvest_results(station = 'Parlier', projectName = 'BaseRuns', soil = 'FineSHR')
+harvest_coarse_base <- harvest_results(station = 'Parlier', projectName = 'BaseRuns', soil = 'CoarseSHR')
+
+harvest_results(station = 'Parlier', projectName = 'SteadyStateRuns', soil = 'LoamySHR')
+harvest_results(station = 'Parlier', projectName = 'AgMAR_21d', soil = 'LoamySHR')
+
+#ssurgo results
+harvest_results('Parlier', 'BaseRuns', 'Clear Lake')
+compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Willows', 'Tulare', 'CoarseSHR', 'LoamySHR', 'FineSHR')
+compnames[order(compnames)]
+soils_to_report <- compnames[order(compnames)][1:18]
+
+for(i in seq_along(soils_to_report)) {
+  test <- harvest_results('Parlier', 'SteadyStateRuns', soils_to_report[i])
+  print(soils_to_report[i])
+  print(tapply(test$biomass_kg_ha, test$crop_type, summary))
+}
+for(i in seq_along(soils_to_report)) {
+  print(soils_to_report[i])
+  overall_results('Parlier', 'AgMAR_Jan7d', soils_to_report[i])
+}
