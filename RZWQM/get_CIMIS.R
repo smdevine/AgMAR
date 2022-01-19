@@ -202,9 +202,43 @@ writeClipboard(c('15/04/1984', '15/04/1985'))
 
 #read-in data to identify wet years
 parlier_all_reformatted_final <- read.csv(file.path(workDir, 'Parlier_Stn39', 'parlier_1983_2021cimisQC.csv'), stringsAsFactors = FALSE)
+parlier_all_reformatted_final$precip_mm
 precip_by_year <- data.frame(precip_mm=tapply(parlier_all_reformatted_final$precip_mm, parlier_all_reformatted_final$year, sum))
 precip_by_year[order(precip_by_year$precip_mm, decreasing = TRUE), ]
 wet_years <- row.names(precip_by_year)[order(precip_by_year[,1], decreasing = TRUE)][1:10]
+wet_years <- as.integer(wet_years)
+
+add_floodMAR <- function(df, years, month, days, application) {
+  df$precip_mm[df$year %in% wet_years & df$month==month & df$day %in% days] <- df$precip_mm[df$year %in% wet_years & df$month==month & df$day %in% days] + application
+  df$precip_mm
+}
+sum(parlier_all_reformatted_final$precip_mm) #10298.7
+precip_JanAgMar <- add_floodMAR(parlier_all_reformatted_final, years = wet_years, month = 1, days = c(15,19,23,27), application = 150)
+sum(precip_JanAgMar) #16298.7
+precip_FebAgMar <- add_floodMAR(parlier_all_reformatted_final, years = wet_years, month = 2, days = c(15,19,23,27), application = 150)
+sum(precip_FebAgMar)
+precip_MarAgMar <- add_floodMAR(parlier_all_reformatted_final, years = wet_years, month = 3, days = c(15,19,23,27), application = 150)
+sum(precip_MarAgMar)
+
+#1/15, 2/5, 2/26, 3/19
+add_floodMAR_LF <- function(df, years, dates, application) {
+  dates_final <- do.call(c, lapply(c(dates), function(x) paste(x, wet_years, sep = '/')))
+  df$precip_mm[df$date %in% dates_final] <- df$precip_mm[df$date %in% dates_final] + application
+  df$precip_mm
+}
+precip_AgMar_LF_early <- add_floodMAR_LF(parlier_all_reformatted_final, dates = c('15/01', '05/02', '26/02', '19/03'), application = 150)
+sum(precip_AgMar_LF_early)
+
+precip_AgMar_LF_mid <- add_floodMAR_LF(parlier_all_reformatted_final, dates = c('25/01', '15/02', '08/03', '29/03'), application = 150)
+sum(precip_AgMar_LF_mid)
+precip_AgMar_LF_late <- add_floodMAR_LF(parlier_all_reformatted_final, dates = c('04/02', '25/02', '18/03', '08/04'), application = 150)
+sum(precip_AgMar_LF_late)
+
+
+AgMar_precip <- data.frame(day=parlier_all_reformatted_final$day, month=parlier_all_reformatted_final$month, year=parlier_all_reformatted_final$year, JanAgMAR_mm=precip_JanAgMar, FebAgMAR_mm=precip_FebAgMar, MarAgMAR_mm=precip_MarAgMar, LF_early_AgMAR=precip_AgMar_LF_early, LF_mid_AgMAR=precip_AgMar_LF_mid, LF_late_AgMAR=precip_AgMar_LF_late)
+write.csv(AgMar_precip, file.path(workDir, 'Parlier_Stn39', 'Palier_synthetic_precip_AgMAR.csv'), row.names = FALSE)
+AgMar_precip <- read.csv(file.path(workDir, 'Parlier_Stn39', 'Palier_synthetic_precip_AgMAR.csv'))
+writeClipboard(as.character(AgMar_precip$JanAgMAR_mm))
 
 #now do this for other CIMIS stations
 
