@@ -1,13 +1,15 @@
 options(max.print = 15000)
 options(width=130)
 # workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/InitialTest_v2/Parlier_1983_2021test/CoarseSHR_automation'
-workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/BaseRuns/CoarseSHR'
+# workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/BaseRuns/CoarseSHR'
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/FloodRuns_v1/LoamySHR'
 #ClimateRuns\Parlier\BaseRuns\CoarseSHR
 input <- readLines(file.path(workDir, 'RZWQM_input.DAT'))
 class(input)
 length(input)
-
+soil_input <- readLines(file.path(workDir, 'RZWQM_fine.DAT'))
+# wet_years <- as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994"))
+#took out code to add FloodMAR applications via irrigation due to technical difficulties; now applications handled via climate data
 
 planting_data_start <- which(input=='=    5       planting window in days after plant date (# of days) [0-45]') + 2
 section1 <- input[1:(planting_data_start-1)]
@@ -24,7 +26,7 @@ section4 <- input[tillage_data_end:irrigation_data_start]
 start_year <- 1984
 end_year <- 2020
 years <- start_year:end_year
-plantings <- length(1984:2020)
+plantings <- length(1984:2020)+length(wet_years)
 
 #TO-DO: add cereal rye placeholder, varying pop. density to get desired effect and allowing for winter irrigation events
 
@@ -48,9 +50,9 @@ planting_plan <- do.call(c, lapply(years, function(x) {
       substring(tomato_line1_final, 12, 15) <- as.character(x)
       c(tomato_line1_final, tomato_line2, tomato_line3)
     }
-  }))
+}))
 planting_data <- c(as.character(plantings), planting_plan)
-
+planting_data
 #write fert plan
 #this is not yet a dynamic function in terms of modifying numbers of lines and dates for alternative split application plans (i.e. right now assumes preplant + 2 splits for corn and preplant + 8 splits for tomato with regularized annual schedule)
 writeFertPlan <- function(corn_N_kg_ha_yr = 250, corn_preplant = 50, corn_splits = 2, tomato_N_kg_ha_yr = 250, tomato_preplant=50, tomato_splits=8, start_year=1984, end_year=2020) {
@@ -109,7 +111,6 @@ writeTillagePlan <- function(start_year=1984, end_year=2020, depth=15) {
   c(length(tillagePlan), tillagePlan)
 }
 tillage_plan <- writeTillagePlan(depth = '15.0')
-tillage_plan
 
 #create irrigation plan
 #irrigationAssumptions argument consists of: 
@@ -121,7 +122,7 @@ tillage_plan
 #[7] irrigation interval limit amount(default=0)
 #[8] irrigation interval time in years(default=0)
 # the number of irrigation operations is calculated by the function
-writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='0  0  0.0  100.0  15.0  0.0  0', cornADtrigger1='0.6', cornDaystrigger1='3', cornDaystrigger2='60', cornADtrigger2='0.5', tomADtrigger1='0.8', tomDaystrigger1='3', tomADtrigger2='0.6', tomDaystrigger2='84', tomADtrigger3='0.4', tomDaystrigger3='135', tomFilltrigger3='0.75', IrrAppPlanting=1.25, flood_month='1', flood_days=c('15', '19', '23', '27'), flood_app=15.0, wet_yrs) {
+writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='0  0  0.0  100.0  15.0  0.0  0', cornADtrigger1='0.6', cornDaystrigger1='3', cornDaystrigger2='60', cornADtrigger2='0.5', tomADtrigger1='0.8', tomDaystrigger1='3', tomADtrigger2='0.6', tomDaystrigger2='84', tomADtrigger3='0.4', tomDaystrigger3='135', tomFilltrigger3='0.75', IrrAppPlanting=1.25) {
   years <- start_year:end_year
   plantings <- length(years)
   IrrPlan <- do.call(c, lapply(years, function(x) {
@@ -147,24 +148,18 @@ writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='
       corn_line1 <- paste('1  1  2  1 16 4', x, '16 4', x, '0 0.0  2.0', sep=' ') #date is 4/16
       corn_line2 <- '1' #not sure what this refers to
       corn_line3 <- paste('16  4', x, sep = '  ')
-        if(x%in%wet_yrs) { #left off here to fix this on 12/21/21
-        c(paste('1  2  2  2', flood_days[1], flood_month, x, '16  4', x, '0 0.0  2.0', sep=' '), '5', paste(flood_days[1], flood_month, x, sep = '  '), paste(flood_days[2], flood_month, x, sep = '  '), paste(flood_days[3], flood_month, x, sep = '  '), paste(flood_days[4], flood_month, x, sep = '  '), corn_line3, '5', paste(as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(IrrAppPlanting))) # the '5' denotes 5 irrigation dates
-      } else {c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))} 
+      c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting)) 
     } else {
       tom_line1 <- paste('2  1  2  1 16 4', x, '16 4', x, '0 0.0  2.0', sep=' ') #date is 4/16
       tom_line2 <- '1' #not sure what this refers to
       tom_line3 <- paste('16  4', x, sep = ' ')
-        if(x%in%wet_yrs) {
-          c(paste('2  2  2  2', flood_days[1], flood_month, x, '16  4', x, '0 0.0  2.0', sep=' '), '5', paste(flood_days[1], flood_month, x, sep = '  '), paste(flood_days[2], flood_month, x, sep = '  '), paste(flood_days[3], flood_month, x, sep = '  '), paste(flood_days[4], flood_month, x, sep = '  '), tom_line3, '5', paste(as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(IrrAppPlanting)))
-      } else {c(tom_line1, tom_line2, tom_line3, as.character(IrrAppPlanting))}
+      c(tom_line1, tom_line2, tom_line3, as.character(IrrAppPlanting))
     }
   })
   )
   c(paste(length(years)*2, irrigationAssumptions, sep = '  '), IrrPlan, IrrPlan2)
 }
-wet_years <- c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994") #as determined in get_CIMIS.R for Parlier dataset
-Irr_plan <- writeIrrPlan(flood_month = '4', wet_yrs = wet_years)
-Irr_plan
+Irr_plan <- writeIrrPlan()
 
 #write mgmt details to file
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/Parlier/FloodRuns_v1/LoamySHR'
