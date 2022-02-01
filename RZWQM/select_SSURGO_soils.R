@@ -52,13 +52,14 @@ all(depth_ck$valid) #all good
 # site(SSURGO_spc) <- ~ SHRname
 
 compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Channac', 'Tehama', 'Capay', 'Clear Lake', 'Willows', 'Tulare')
+compnames2 <- c('Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Jacktone', 'Porterville', 'Lokern', 'Myers', 'Esquon', 'Hollenbeck')
 print_soils_by_compname <- function(x) {
   y <- SSURGO_horizons[SSURGO_horizons$compname==x,]
   print(paste(x, length(unique(y$cokey))))
   # print(y)
 }
-for(i in seq_along(compnames)) {
-  print_soils_by_compname(compnames[i])
+for(i in seq_along(compnames2)) {
+  print_soils_by_compname(compnames2[i])
 }
 compnames <- compnames[compnames != 'Channac']
 return_soil_by_compname <- function(x) {
@@ -68,13 +69,13 @@ return_soil_by_compname <- function(x) {
   soil <- y[as.character(y$cokey)==cokey,]
   soil
 }
-soils_to_run <- do.call(rbind, lapply(compnames, return_soil_by_compname))
+soils_to_run <- do.call(rbind, lapply(compnames2, return_soil_by_compname))
 soils_to_run
 dim(soils_to_run)
 unique(soils_to_run$compname)
 length(unique(soils_to_run$cokey))
 soils_to_run$texture <- textural.class.calc(sand = soils_to_run$sandtotal_r, silt = soils_to_run$silttotal_r, clay = soils_to_run$claytotal_r)
-write.csv(soils_to_run, file.path(resultsDir, 'RZWQM input', 'SSURGO_soils_to_initialize.csv'), row.names = FALSE)
+write.csv(soils_to_run, file.path(resultsDir, 'RZWQM input', 'SSURGO_soils_to_initialize_part2.csv'), row.names = FALSE) #not that compnames2 produced this file
 
 #capay re-run
 capay <- return_soil_by_compname('Capay')
@@ -89,3 +90,33 @@ write.csv(tehama, file.path(resultsDir, 'RZWQM input', 'soils to rerun', 'Tehama
 tujunga <- return_soil_by_compname('Tujunga')
 tujunga
 write.csv(tujunga, file.path(resultsDir, 'RZWQM input', 'soils to rerun', 'Tujunga.csv'), row.names = FALSE)
+
+#kimberlina re-run
+kimberlina <- return_soil_by_compname('Kimberlina')
+kimberlina
+write.csv(kimberlina, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Kimberlina.csv'), row.names = FALSE)
+
+#columbia re-run
+columbia <- return_soil_by_compname('Columbia')
+columbia
+write.csv(columbia, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'columbia.csv'), row.names = FALSE)
+
+#westhaven re-run
+westhaven <- return_soil_by_compname('Westhaven')
+westhaven
+write.csv(westhaven, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'westhaven.csv'), row.names = FALSE)
+
+#tachi re-run
+tachi <- return_soil_by_compname('Tachi')
+tachi
+write.csv(tachi, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Tachi.csv'), row.names = FALSE)
+
+#cropley re-run
+cropley <- return_soil_by_compname('Cropley')
+cropley
+write.csv(cropley, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'cropley.csv'), row.names = FALSE)
+
+#conejo re-run
+conejo <- return_soil_by_compname('Conejo')
+conejo
+write.csv(conejo, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'conejo.csv'), row.names = FALSE)
