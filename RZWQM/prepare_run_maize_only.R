@@ -1,5 +1,8 @@
 #to-do
 #1: make crop planting not dependent on soil moisture [done]
+#2: make fake winter cover crop planting and harvest functional regardless of whether the day in the date is single or double digits
+#functions go to line 341
+
 options(max.print = 15000)
 options(width=130)
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/'
