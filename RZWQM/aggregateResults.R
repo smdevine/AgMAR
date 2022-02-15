@@ -1,3 +1,5 @@
+library(soilDB)
+library(aqp)
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
 resultsDir <- file.path(workDir, 'Results')
 ssurgoDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/ssurgo_profile_data/RZWQM input'
@@ -25,15 +27,43 @@ overall_results$X <- NULL
 #thi needs to be updated
 #read-in SSURGO data
 ssurgo_horizons <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize.csv'), stringsAsFactors = FALSE)
+colnames(ssurgo_horizons)
+ssurgo_horizons2 <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize_part2.csv'), stringsAsFactors = FALSE)
+colnames(ssurgo_horizons2)
+
+ssurgo_horizons <- rbind(ssurgo_horizons, ssurgo_horizons2)
 comp_data <- data.frame(compnames=unique(ssurgo_horizons$compname), stringsAsFactors = FALSE)
 comp_data$SHR <- ssurgo_horizons$SHRname[match(comp_data$compnames, ssurgo_horizons$compname)]
 comp_data2 <- data.frame(compnames=c('CoarseSHR', 'LoamySHR', 'FineSHR'), SHR=unique(comp_data$SHR), stringsAsFactors = FALSE)
 comp_data <- rbind(comp_data, comp_data2)
-overall_results$SHR <- comp_data$SHR[match(overall_results$soil, comp_data$compnames)]
+comp_data[order(comp_data$SHR),]
+table(comp_data$SHR)
 
+#add SHR info
+overall_results$SHR <- comp_data$SHR[match(overall_results$soil, comp_data$compnames)]
 rownames(overall_results) <- 1:nrow(overall_results)
+table(overall_results$SHR[overall_results$scenario=='Control'])
+
+#add net min column
 overall_results$net_min_kgN_ha <- overall_results$N_min_kgN_ha - overall_results$N_imm_kgN_ha
-overall_results$SHR
+
+#add net soil N increase
+overall_results$increase_totalsoilkgN_ha <- overall_results$final_totalsoilkgN_ha - overall_results$initial_totalsoilkgN_ha
+
+#add some more columns
+overall_results$NO3_leached_delta_kgN_ha <- sapply(1:nrow(overall_results), function(x) {
+  control_leaching <- overall_results[overall_results$scenario=='Control',]
+  overall_results$NO3_leached_kgN_ha[x] - control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)]
+})
+overall_results$NO3_leached_delta_percent <- sapply(1:nrow(overall_results), function(x) {
+  control_leaching <- overall_results[overall_results$scenario=='Control',]
+  round(100*(overall_results$NO3_leached_kgN_ha[x] - control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)]) / control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)], 2)
+})
+
+#write to file
+write.csv(overall_results, file.path(resultsDir, 'Summaries', 'overall_results_Parlier.csv'), row.names = FALSE)
+
+#summary stats
 tapply(overall_results$NO3_leached_kgN_ha[overall_results$scenario=='Control'], overall_results$SHR[overall_results$scenario=='Control'], summary)
 tapply(overall_results$NO3_leached_kgN_ha[overall_results$scenario=='Control'], overall_results$SHR[overall_results$scenario=='Control'], mean)
 tapply(overall_results$NO3_leached_kgN_ha[overall_results$scenario=='Control'], overall_results$SHR[overall_results$scenario=='Control'], sd)
@@ -148,16 +178,6 @@ overall_results[which(overall_results$SHR==SHRnames[1]),]
 
 head(overall_results)
 length(1984:2020) #37
-
-#add some more columns
-overall_results$NO3_leached_delta_kgN_ha <- sapply(1:nrow(overall_results), function(x) {
-  control_leaching <- overall_results[overall_results$scenario=='Control',]
-  overall_results$NO3_leached_kgN_ha[x] - control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)]
-})
-overall_results$NO3_leached_delta_percent <- sapply(1:nrow(overall_results), function(x) {
-  control_leaching <- overall_results[overall_results$scenario=='Control',]
-  round(100*(overall_results$NO3_leached_kgN_ha[x] - control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)]) / control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)], 2)
-})
 tapply(overall_results$NO3_leached_delta_percent[overall_results$scenario!='Control'], overall_results$SHR[overall_results$scenario!='Control'], summary)
 tapply(overall_results$NO3_leached_delta_kgN_ha[overall_results$scenario!='Control'], overall_results$SHR[overall_results$scenario!='Control'], summary)
 sum(abs(overall_results$NO3_leached_delta_percent[overall_results$scenario!='Control']) < 10)
@@ -173,14 +193,40 @@ plot(overall_results$net_min_kgN_ha[overall_results$scenario=='Control'], overal
 points(overall_results$net_min_kgN_ha[overall_results$scenario=='21d'], overall_results$NO3_leached_kgN_ha[overall_results$scenario=='21d'], col=overall_results$SHRcolor[overall_results$scenario=='21d'], xlab='', ylab='', cex=1.1, pch=2)
 legend()
 
-#add net soil N increase
-overall_results$increase_totalsoilkgN_ha <- overall_results$final_totalsoilkgN_ha - overall_results$initial_totalsoilkgN_ha
+
 
 plot(overall_results$increase_totalsoilkgN_ha[overall_results$scenario=='Control'], overall_results$NO3_leached_kgN_ha[overall_results$scenario=='Control'])
 plot(overall_results$increase_totalsoilkgN_ha[overall_results$scenario=='21d'], overall_results$NO3_leached_kgN_ha[overall_results$scenario=='21d'], col=overall_results$SHRcolor[overall_results$scenario=='21d'])
-#write to file
-write.csv(overall_results, file.path(resultsDir, 'Summaries', 'overall_results_Parlier.csv'), row.names = FALSE)
+
+#add cokey info
+length(unique(ssurgo_horizons$cokey)) #31
 
 #ordered looks
+colnames(overall_results)
 overall_results[order(overall_results$SHR),]
 overall_results[order(overall_results$scenario),]
+test <- overall_results[overall_results$soil %in% compnames2,]
+test <- overall_results[overall_results$scenario=='Control',]
+test[order(test$SHR),]
+
+#create soil profile collection object
+#initialize spc object
+SSURGO_spc <- ssurgo_horizons
+depths(SSURGO_spc) <- cokey ~ hzdept_r + hzdepb_r
+depth_ck <- checkHzDepthLogic(SSURGO_spc)
+head(depth_ck)
+all(depth_ck$valid) #all good
+names(SSURGO_spc)
+#calculate profile weighted ksat to calc approx. days needed to apply 15 cm water
+profile_wtd_ksat <- profileApply(SSURGO_spc, FUN=function(x) {
+  profile_depth <- max(x$hzdepb_r)
+  horizon_wts <- (x$hzdepb_r - x$hzdept_r) / profile_depth
+  sum(x$ksat_r * horizon_wts)*24*3600/10000
+})
+
+comp_data$cokey <- ssurgo_horizons$cokey[match(comp_data$compnames, ssurgo_horizons$compname)]
+comp_data$ksat_cm_day <- profile_wtd_ksat[match(comp_data$cokey, as.integer(names(profile_wtd_ksat)))]
+
+comp_data$irrdays <- ifelse(comp_data$ksat_cm_day >= 15, 1, ceiling(15 / comp_data$ksat_cm_day))
+comp_data[order(comp_data$SHR),]
+write.csv(comp_data, file.path(ssurgoDir, 'comp_data_RZWQMruns_Feb22.csv'), row.names = FALSE)
