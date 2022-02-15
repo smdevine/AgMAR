@@ -42,7 +42,7 @@ length(unique(SSURGO_horizons$cokey)) #2516 unique profiles
 length(unique(SSURGO_horizons$compname)) #578 unique compnames
 SSURGO_horizons <- SSURGO_horizons[order(SSURGO_horizons$cokey, SSURGO_horizons$hzdept_r),]
 head(SSURGO_horizons, 20)
-
+SSURGO_horizons[SSURGO_horizons$cokey==19574236,]
 #initialize spc object
 SSURGO_spc <- SSURGO_horizons
 depths(SSURGO_spc) <- cokey ~ hzdept_r + hzdepb_r
@@ -99,7 +99,7 @@ write.csv(kimberlina, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2
 #columbia re-run
 columbia <- return_soil_by_compname('Columbia')
 columbia
-write.csv(columbia, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'columbia.csv'), row.names = FALSE)
+write.csv(columbia, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'columbia_Coarse.csv'), row.names = FALSE)
 
 #westhaven re-run
 westhaven <- return_soil_by_compname('Westhaven')
@@ -120,3 +120,23 @@ write.csv(cropley, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 
 conejo <- return_soil_by_compname('Conejo')
 conejo
 write.csv(conejo, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'conejo.csv'), row.names = FALSE)
+
+#excelsior re-run
+excelsior <- return_soil_by_compname('Excelsior')
+excelsior
+write.csv(excelsior, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'excelsior_Coarse.csv'), row.names = FALSE)
+
+#pleito re-run
+pleito <- return_soil_by_compname('Pleito')
+pleito
+write.csv(pleito, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'pleito_Loamy.csv'), row.names = FALSE)
+
+#esquon re-run
+esquon <- return_soil_by_compname('Esquon')
+esquon
+write.csv(esquon, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'esquon_Fine.csv'), row.names = FALSE)
+
+#stockton get
+merced <- return_soil_by_compname('Merced')
+merced
+write.csv(merced, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Merced_Fine.csv'), row.names = FALSE)
