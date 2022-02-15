@@ -7,7 +7,8 @@ loadfonts(device = 'win')
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
 FiguresDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries/Figures'
 MBresultsDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries'
-
+compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare') #'Willows'
+compnames2 <- c('Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers')
 
 cumulativeFluxes <- function(station, projectName, soil) {
   scenarioDirs <- list.dirs(file.path(workDir, station, projectName), recursive = FALSE)
@@ -41,15 +42,46 @@ dailyReport<- function(station, projectName, soil) {
 }
 
 #assemble datasets for plotting cumulative nitrate leached
+westhaven_control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', 'Westhaven')
+westhaven_AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', 'Westhaven')
+plot(westhaven_control$date, westhaven_control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim=c(0,1300))
+lines(westhaven_AgMAR_21d$date, westhaven_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
 
-dailyReport_df <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', 'Tehama')
+kimberlina_control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', 'Kimberlina')
+kimberlina_AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', 'Kimberlina')
+plot(kimberlina_control$date, kimberlina_control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim=c(0,450))
+lines(kimberlina_AgMAR_21d$date, kimberlina_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
+plot(kimberlina_control$date, cumsum(kimberlina_control$NO3.FLUX.INTO.GW..UG.CM.2.DAY./10, type='l')
+lines(kimberlina_AgMAR_21d$date, kimberlina_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
+
+soils_to_report <- c(compnames, compnames2)
+#soil profile nitrate
+for(i in seq_along(soils_to_report)) {
+  control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', soils_to_report[i])
+  AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', soils_to_report[i])
+  y_max <- max(control$TOTAL.NO3.N.IN.PROFILE..KG.HA., AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA.)  
+  plot(control$date, control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim= c(0, y_max), col='red', ylab=expression('Soil profile nitrate (kg ha'^-1*')'), xlab='Year', main=soils_to_report[i])
+  lines(AgMAR_21d$date, AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
+}
+
+#cumulative nitrate leached
+for(i in seq_along(soils_to_report)) {
+  control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', soils_to_report[i])
+  AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', soils_to_report[i])
+  y_max <- max(control$NO3_cumulative, AgMAR_21d$NO3_cumulative)  
+  plot(control$date, control$NO3_cumulative, type='l', ylim= c(0, y_max), col='red', ylab=expression('Cumulative nitrate leached (kg ha'^-1*')'), xlab='Year', main=soils_to_report[i])
+  lines(AgMAR_21d$date, AgMAR_21d$NO3_cumulative, col='blue')
+}
+
+dailyReport_df <- dailyReport(station = 'Parlier', projectName = 'AgMAR_Jan3d', 'Capay')
 plot(dailyReport_df$date, dailyReport_df$NO3_cumulative, type='l')
 colnames(dailyReport_df)
 plot_window <- 1:4000
 plot(dailyReport_df$date[plot_window], dailyReport_df$NUTRIENT.STRESS[plot_window], type = 'l')
 plot(dailyReport_df$date[plot_window], dailyReport_df$WATER.STRESS[plot_window], type = 'l')
 plot(dailyReport_df$date[plot_window], dailyReport_df$LEAF.AREA.INDEX[plot_window], type = 'l')
-plot(dailyReport_df$date, dailyReport_df$TOTAL.NO3.N.IN.PROFILE..KG.HA., type = 'l')
+plot(dailyReport_df$date[plot_window], dailyReport_df$TOTAL.NO3.N.IN.PROFILE..KG.HA.[plot_window], type = 'l')
+plot(dailyReport_df$date[plot_window], dailyReport_df$WATER.FLUX.INTO.GW..CM.DAY.[plot_window], type = 'l')
 
 head(dailyReport_df)
 colnames(dailyReport_df)
@@ -156,7 +188,6 @@ writeOverallResults <- function(compnames, scenario, weather_stn) {
     overall_results_fn(station = weather_stn, projectName = scenario, soil = compnames[i])
 }
 compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Willows', 'Tulare', 'CoarseSHR', 'LoamySHR', 'FineSHR')
-compnames[1:16]
 writeOverallResults(compnames = compnames, scenario = 'SteadyStateRuns', weather_stn = 'Parlier')
 writeOverallResults(compnames = compnames, scenario = 'AgMAR_Jan3d', weather_stn = 'Parlier')
 writeOverallResults(compnames = compnames, scenario = 'AgMAR_Jan7d', weather_stn = 'Parlier')
@@ -284,12 +315,13 @@ harvest_results <- function(station, projectName, soil) {
 #ssurgo results
 test <- harvest_results('Parlier', 'SteadyStateRuns', 'Milham_test')
 tapply(test$biomass_kg_ha, test$crop_type, summary)
-compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Willows', 'Tulare', 'CoarseSHR', 'LoamySHR', 'FineSHR')
+
 compnames[order(compnames)]
-soils_to_report <- compnames[order(compnames)][1:18]
+soils_to_report <- compnames[order(compnames)]
+soils_to_report <- compnames2
 
 for(i in seq_along(soils_to_report)) {
-  test <- harvest_results('Parlier', 'AgMAR_Jan7d', soils_to_report[i])
+  test <- harvest_results('Parlier', 'SteadyStateRuns', soils_to_report[i])
   print(soils_to_report[i])
   print(tapply(test$biomass_kg_ha, test$crop_type, summary))
 }
