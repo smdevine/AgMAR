@@ -5,7 +5,7 @@
 
 options(max.print = 15000)
 options(width=130)
-workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/'
+# workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/'
 copyRZINIT <- function(station, scenario, soil) {
   x <- readLines(file.path(workDir, station, scenario, soil, 'soil info', 'RZINIT.DAT')) #this file has to be manually copied into this directory after creation with the RZWQM GUI by entering soil information
   x_file <- file(file.path(workDir, station, scenario, soil, 'RZINIT.DAT'), 'w') #overwrite existing RZINIT.DAT file that was imported with template scenario
@@ -204,7 +204,7 @@ writeIrrPlan <- function(start_year=1984, end_year=2020, irrigationAssumptions='
   }))
   IrrPlan2 <- do.call(c, lapply(years, function(x) {
     corn_line1 <- paste('1  1  2  1 16 4', x, '16 4', x, '0 0.0  2.0', sep=' ') #date is 4/16
-    corn_line2 <- '1' #not sure what this refers to
+    corn_line2 <- '1' #refers to one date specific irrigation
     corn_line3 <- paste('16  4', x, sep = '  ')
     c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting)) 
   }))
@@ -229,9 +229,9 @@ writeIrrPlan_AgMAR <- function(start_year=1984, end_year=2020, irrigationAssumpt
     corn_line3 <- paste('16  4', x, sep = '  ')
     if(x%in%wet_yrs) { #left off here to fix this on 12/21/21
       c(paste('3  2  2  2', flood_days[1], flood_month, x, flood_days[4], flood_month, x, '0 0.0  2.0', sep=' '), '4', paste(flood_days[1], flood_month, x, sep = '  '), paste(flood_days[2], flood_month, x, sep = '  '), paste(flood_days[3], flood_month, x, sep = '  '), paste(flood_days[4], flood_month, x, sep = '  '), '4', paste(as.character(flood_app), as.character(flood_app), as.character(flood_app), as.character(flood_app)), corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting)) # the '4' denotes 4 irrigation dates
-    } else {c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))} 
+    } else {c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))}
   }))
-  c(paste(length(years)*2, irrigationAssumptions, sep = '  '), IrrPlan, IrrPlan2)
+  c(paste((length(years)*2+length(wet_yrs)), irrigationAssumptions, sep = '  '), IrrPlan, IrrPlan2)
 }
 
 writeIrrPlan_AgMAR_LF <- function(start_year=1984, end_year=2020, irrigationAssumptions='0  0  0.0  100.0  15.0  0.0  0', cornADtrigger1='0.6', cornDaystrigger1='3', cornDaystrigger2='60', cornADtrigger2='0.5', IrrAppPlanting=1.25, flood_month, flood_days, flood_app=15.0, wet_yrs) {
@@ -251,9 +251,9 @@ writeIrrPlan_AgMAR_LF <- function(start_year=1984, end_year=2020, irrigationAssu
     corn_line3 <- paste('16  4', x, sep = '  ')
     if(x%in%wet_yrs) { #left off here to fix this on 12/21/21
       c(paste('3  2  2  2', flood_days[1], flood_month[1], x, flood_days[1], flood_month[1], x, '0 0.0  2.0', sep=' '), '1', paste(flood_days[1], flood_month[1], x, sep = '  '), '1', as.character(flood_app), paste('3  2  2  2', flood_days[2], flood_month[2], x, flood_days[2], flood_month[2], x, '0 0.0  2.0', sep=' '), '1', paste(flood_days[2], flood_month[2], x, sep = '  '), '1', as.character(flood_app), paste('3  2  2  2', flood_days[3], flood_month[3], x, flood_days[3], flood_month[3], x, '0 0.0  2.0', sep=' '), '1', paste(flood_days[3], flood_month[3], x, sep = '  '), '1', as.character(flood_app), paste('3  2  2  2', flood_days[4], flood_month[4], x, flood_days[4], flood_month[4], x, '0 0.0  2.0', sep=' '), '1', paste(flood_days[4], flood_month[4], x, sep = '  '), '1', as.character(flood_app), corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting)) # the '4' denotes 4 irrigation dates
-    } else {c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))} 
+    } else {c(corn_line1, corn_line2, corn_line3, as.character(IrrAppPlanting))}
   }))
-  c(paste((length(years)*2+length(wet_yrs)*4), irrigationAssumptions, sep = '  '), IrrPlan, IrrPlan2)
+  c(paste((length(years)*2+4*length(wet_yrs)), irrigationAssumptions, sep = '  '), IrrPlan, IrrPlan2) #because this relies on separate irrigation statements for each AgMAR application
 }
 
 #write file
@@ -306,7 +306,7 @@ steady_state_setup <- function(station, scenario, soil, type, soil_input) {
 }
 
 #AgMAR scenario functions
-AgMAR_runs <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planting, fake_harvest) {
+AgMAR_runs <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planting, fake_harvest, wetyears) {
   met <- paste0(stn, '_1983_2021.MET')
   brk <- paste0(stn, '_1983_2021.BRK')
   for(i in 1:length(suelos)) {
@@ -316,15 +316,15 @@ AgMAR_runs <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planting,
     copyRZINIT(stn, scn, suelos[i])
     gen_input <- templateRZWQM(stn, scn, suelos[i], 'RZWQM_init.DAT')
     suelo_input <- soilInfo(stn, scn, suelos[i], 'RZWQM.DAT')
-    planting <- writePlantingPlan_AgMAR(wet_years=as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994")), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
+    planting <- writePlantingPlan_AgMAR(wet_years=as.integer(wetyears), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
     fert <- writeFertPlan(end_year = 2020)
     tillage <- writeTillagePlan(depth = '15.0')
-    Irr <- if(suelos[i] %in% stress_soils) {writeIrrPlan_AgMAR(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7', flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994")))} else{writeIrrPlan_AgMAR(flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994")))}
+    Irr <- if(suelos[i] %in% stress_soils) {writeIrrPlan_AgMAR(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7', flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(wetyears))} else{writeIrrPlan_AgMAR(flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(wetyears))}
     writeRZWQM(station = stn, scenario = scn, soil = suelos[i], input=gen_input, soil_input = suelo_input, planting_data = planting, fert_plan = fert, tillage_plan = tillage, Irr_plan = Irr)
     steady_state_setup(station = stn, scenario = scn, soil = suelos[i], type = 'run 2', soil_input = suelo_input)
   }
 }
-AgMAR_runs_LF <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planting, fake_harvest) {
+AgMAR_runs_LF <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planting, fake_harvest, wetyears) {
   met <- paste0(stn, '_1983_2021.MET')
   brk <- paste0(stn, '_1983_2021.BRK')
   for(i in 1:length(suelos)) {
@@ -334,115 +334,10 @@ AgMAR_runs_LF <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planti
     copyRZINIT(stn, scn, suelos[i])
     gen_input <- templateRZWQM(stn, scn, suelos[i], 'RZWQM_init.DAT')
     suelo_input <- soilInfo(stn, scn, suelos[i], 'RZWQM.DAT')
-    planting <- writePlantingPlan_AgMAR_LF(wet_years=as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994")), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
+    planting <- writePlantingPlan_AgMAR_LF(wet_years=as.integer(wetyears), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
     fert <- writeFertPlan(end_year = 2020)
     tillage <- writeTillagePlan(depth = '15.0')
-    Irr <- if(suelos[i] %in% stress_soils) {writeIrrPlan_AgMAR_LF(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7', flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994")))} else{writeIrrPlan_AgMAR_LF(flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(c("1995", "2010", "1992", "1993", "1987", "1998", "2006", "1991", "1986", "1994")))}
+    Irr <- if(suelos[i] %in% stress_soils) {writeIrrPlan_AgMAR_LF(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7', flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(wetyears))} else{writeIrrPlan_AgMAR_LF(flood_month=AgMAR_month, flood_days=AgMAR_days, wet_yrs=as.integer(wetyears))}
     writeRZWQM(station = stn, scenario = scn, soil = suelos[i], input=gen_input, soil_input = suelo_input, planting_data = planting, fert_plan = fert, tillage_plan = tillage, Irr_plan = Irr)
   }
 }
-  
-#run SSURGO soils through base runs with maize only scenario
-compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Willows', 'Tulare', 'CoarseSHR', 'LoamySHR', 'FineSHR') #'Channac' not included
-stress_soils <- c('Capay', 'Willows')#, 'Clear Lake', 'Tulare')
-stn <- 'Parlier'
-
-# for(i in 1:length(compnames)) {
-#   print(i)
-#   ipnames_fix(station = stn, scenario = 'BaseRuns', soil = compnames[i], met_fname = 'Parlier_1983_2021.MET', brk_fname = 'Parlier_1983_2021.BRK', ana_fname = paste0(compnames[i], '_baserun.ana'))
-#   copyRZINIT(stn, 'BaseRuns', compnames[i])
-#   input <- templateRZWQM(stn, 'BaseRuns', compnames[i], 'RZWQM_init.DAT')
-#   soil_input <- soilInfo(stn, 'BaseRuns', compnames[i], 'RZWQM.DAT')
-#   planting_data <- writePlantingPlan()
-#   fert_plan <- writeFertPlan(end_year = 2020) #tomato_N_kg_ha_yr = 200, tomato_splits = 6
-#   tillage_plan <- writeTillagePlan(depth = '15.0')
-#   Irr_plan <- if(compnames[i] %in% stress_soils) {writeIrrPlan(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7')} else{writeIrrPlan()}
-#   writeRZWQM(station = stn, scenario = 'BaseRuns', soil = compnames[i], input=input, soil_input = soil_input, planting_data = planting_data, fert_plan = fert_plan, tillage_plan = tillage_plan, Irr_plan = Irr_plan)
-# }
-
-#prepare steady state templates
-for(i in 1:length(compnames)) {
-  ipnames_fix(station = stn, scenario = 'SteadyStateRuns', soil = compnames[i], met_fname = 'Parlier_1983_2021.MET', brk_fname = 'Parlier_1983_2021.BRK', ana_fname = paste0(compnames[i], '_SteadyStateRun.ana'))
-  copyRZINIT(stn, 'SteadyStateRuns', compnames[i])
-  gen_input <- templateRZWQM(stn, 'SteadyStateRuns', compnames[i], 'RZWQM_init.DAT')
-  suelo <- soilInfo(stn, 'SteadyStateRuns', compnames[i], 'RZWQM.DAT')
-  planting <- writePlantingPlan()
-  fert <- writeFertPlan(end_year = 2020)
-  tillage <- writeTillagePlan(depth = '15.0')
-  Irr <- if(compnames[i] %in% stress_soils) {writeIrrPlan(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7')} else{writeIrrPlan()}
-  writeRZWQM(station = stn, scenario = 'SteadyStateRuns', soil = compnames[i], input=gen_input, soil_input = suelo, planting_data = planting, fert_plan = fert, tillage_plan = tillage, Irr_plan = Irr)
-  steady_state_setup(station = stn, scenario = 'SteadyStateRuns', soil = compnames[i], type = 'run 1', suelo)
-  rm(gen_input, planting, fert, tillage, Irr, suelo)
-}
-
-#run then change set-up and run again
-for(i in 1:length(compnames)) {
-  suelo <- soilInfo(stn, 'SteadyStateRuns', compnames[i], 'RZWQM.DAT')
-  steady_state_setup(station = stn, scenario = 'SteadyStateRuns', soil = compnames[i], type = 'run 2', soil_input = suelo)
-  rm(suelo)
-}
-
-#AgMAR scenarios
-#Jan 7d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Jan7d', suelos = compnames, AgMAR_month = '1', AgMAR_days = c('5', '12', '19', '26'), fake_planting = '4    1   1992', fake_harvest = '27 1 1992')
-#Jan 3d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Jan3d', suelos = compnames, AgMAR_month = '1', AgMAR_days = c('11', '14', '17', '20'), fake_planting = '4    1   1992', fake_harvest = '27 1 1992')
-#Mar 3d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Mar3d', suelos = compnames, AgMAR_month = '3', AgMAR_days = c('11', '14', '17', '20'), fake_planting = '4    3   1992', fake_harvest = '27 3 1992')
-#Mar 7d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Mar7d', suelos = compnames, AgMAR_month = '3', AgMAR_days = c('5', '12', '19', '26'), fake_planting = '4    3   1992', fake_harvest = '27 3 1992')
-
-#21-day interval starting Jan 7
-AgMAR_runs_LF(stn = 'Parlier', scn = 'AgMAR_21d', suelos = compnames, AgMAR_month = c('1', '1', '2', '3'), AgMAR_days = c('8', '29', '19', '12'), fake_planting = c('7    1', '28   1', '18   2', '11   3'), fake_harvest = c('9 1', '30 1', '20 2', '13 3'))
-
-#test
-'Milham_test'
-
-stn <- 'Parlier'
-scn <- 'SteadyStateRuns'
-ipnames_fix(station = stn, scenario = 'SteadyStateRuns', soil = 'Milham_test', met_fname = 'Parlier_1983_2021.MET', brk_fname = 'Parlier_1983_2021.BRK', ana_fname = paste0('Milham_test', '_SteadyState.ana'))
-steady_state_setup(station = stn, scenario = 'SteadyStateRuns', soil = 'Milham_test', type = 'run 1')
-gen_input <- templateRZWQM(stn, scn, 'Milham_test', 'RZWQM_init.DAT')
-suelo_input <- soilInfo(stn, scn, 'Milham_test', 'RZWQM.DAT')
-planting <- writePlantingPlan()
-fert <- writeFertPlan(end_year = 2020)
-tillage <- writeTillagePlan(depth = '15.0')
-Irr <- if(compnames[i] %in% stress_soils) {writeIrrPlan(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7')} else{writeIrrPlan()}
-writeRZWQM(station = stn, scenario = scn, soil = 'Milham_test', input=gen_input, soil_input = suelo_input, planting_data = planting, fert_plan = fert, tillage_plan = tillage, Irr_plan = Irr)
-
-#temp fix of breakthrough node number
-scenarios <- c('AgMAR_Jan7d', 'AgMAR_Jan3d', 'AgMAR_Mar7d', 'AgMAR_Mar3d', 'AgMAR_21d')
-suelo_name <- 'Colpien'
-for(i in 1:length(scenarios)) {
-  suelo <- soilInfo(stn, 'SteadyStateRuns', suelo_name, 'RZWQM.DAT')
-  steady_state_setup(station = stn, scenario = scenarios[i], soil = suelo_name, type = 'run 2', soil_input = suelo)
-}
-
-#set-up steady state script by soil name
-#update node numbers in cntrl.dat file: note, this is taken care of by steady_state_setup function
-soil <- 'Tehama'
-ipnames_fix(station = stn, scenario = 'SteadyStateRuns', soil = soil, met_fname = 'Parlier_1983_2021.MET', brk_fname = 'Parlier_1983_2021.BRK', ana_fname = paste0(soil, '_SteadyStateRun.ana'))
-copyRZINIT(stn, 'SteadyStateRuns', soil)
-gen_input <- templateRZWQM(stn, 'SteadyStateRuns', soil, 'RZWQM_init.DAT')
-suelo <- soilInfo(stn, 'SteadyStateRuns', soil, 'RZWQM.DAT')
-planting <- writePlantingPlan()
-fert <- writeFertPlan(end_year = 2020)
-tillage <- writeTillagePlan(depth = '15.0')
-Irr <- if(soil %in% stress_soils) {writeIrrPlan(cornADtrigger1 = '0.8', cornADtrigger2 = '0.7')} else{writeIrrPlan()}
-writeRZWQM(station = stn, scenario = 'SteadyStateRuns', soil = soil, input=gen_input, soil_input = suelo, planting_data = planting, fert_plan = fert, tillage_plan = tillage, Irr_plan = Irr)
-steady_state_setup(station = stn, scenario = 'SteadyStateRuns', soil = soil, type = 'run 1', suelo)
-rm(gen_input, planting, fert, tillage, Irr)
-steady_state_setup(station = stn, scenario = 'SteadyStateRuns', soil = soil, type = 'run 2', suelo)
-rm(suelo)
-
-#then copy updated soil name's steady state folder to AgMAR scenario directories and run the following to correct the management input files
-#Jan 7d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Jan7d', suelos = soil, AgMAR_month = '1', AgMAR_days = c('5', '12', '19', '26'), fake_planting = '4    1   1992', fake_harvest = '27 1 1992')
-#Jan 3d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Jan3d', suelos = soil, AgMAR_month = '1', AgMAR_days = c('11', '14', '17', '20'), fake_planting = '4    1   1992', fake_harvest = '27 1 1992')
-#Mar 3d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Mar3d', suelos = soil, AgMAR_month = '3', AgMAR_days = c('11', '14', '17', '20'), fake_planting = '4    3   1992', fake_harvest = '27 3 1992')
-#Mar 7d interval
-AgMAR_runs(stn = 'Parlier', scn = 'AgMAR_Mar7d', suelos = soil, AgMAR_month = '3', AgMAR_days = c('5', '12', '19', '26'), fake_planting = '4    3   1992', fake_harvest = '27 3 1992')
-#21 d interval
-AgMAR_runs_LF(stn = 'Parlier', scn = 'AgMAR_21d', suelos = soil, AgMAR_month = c('1', '1', '2', '3'), AgMAR_days = c('8', '29', '19', '12'), fake_planting = c('7    1', '28   1', '18   2', '11   3'), fake_harvest = c('9 1', '30 1', '20 2', '13 3'))
