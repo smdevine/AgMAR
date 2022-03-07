@@ -4,11 +4,16 @@ library(extrafontdb)
 # font_import() #only needs to be done one time after updating and re-installing R and moving and updating packages
 loadfonts(device = 'win')
 # workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/InitialTest_v2'
-workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
+# workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
+workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/'
 FiguresDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries/Figures'
 MBresultsDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/summaries'
-compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare') #'Willows'
-compnames2 <- c('Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers')
+# compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare') #'Willows'
+# compnames2 <- c('Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers')
+compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare', 'Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers', 'Lofgren', 'Wekoda')
+compnames <- compnames[order(compnames)]
+compnames
+stress_soils <- c('Capay', 'Willows', 'Wekoda')
 
 cumulativeFluxes <- function(station, projectName, soil) {
   scenarioDirs <- list.dirs(file.path(workDir, station, projectName), recursive = FALSE)
@@ -73,7 +78,7 @@ for(i in seq_along(soils_to_report)) {
   lines(AgMAR_21d$date, AgMAR_21d$NO3_cumulative, col='blue')
 }
 
-dailyReport_df <- dailyReport(station = 'Parlier', projectName = 'AgMAR_Jan3d', 'Capay')
+dailyReport_df <- dailyReport(station = 'Davis', projectName = 'SteadyStateRuns', 'Pleito')
 plot(dailyReport_df$date, dailyReport_df$NO3_cumulative, type='l')
 colnames(dailyReport_df)
 plot_window <- 1:4000
@@ -180,7 +185,7 @@ overall_results_fn <- function(station, projectName, soil) {
   result <- data.frame(initial_totalsoilMgC_ha=initial_soilC/1000, final_totalsoilMgC_ha=final_soilC/1000, initial_totalsoilkgN_ha=initial_soilN, final_totalsoilkgN_ha=final_soilN, denitrification_kgN_ha=denitrification, NO3_leached_kgN_ha=NO3_leaching, NO3_ppm=NO3_ppm, volatilized_kgN_ha=vol, fert_app_kgN_ha=fert_app, N_min_kgN_ha=N_min, N_imm_kgN_ha=N_imm, precip_cm=precip, irrigation_cm=irr, runoff_cm=runoff, evap_cm=evap, trans_cm=trans, DP_cm=DP)
   # print(soil)
   # print(result)
-  write.csv(result, file.path(workDir,'results', 'Overall', paste0(soil,'_', projectName, '_', station, '.csv')))
+  write.csv(result, file.path(workDir,'results', 'Overall', station, paste0(soil,'_', projectName, '_', station, '.csv')))
 }
 # overall_results_fn('Parlier', 'SteadyStateRuns', 'Capay')
 writeOverallResults <- function(compnames, scenario, weather_stn) {
@@ -313,15 +318,20 @@ harvest_results <- function(station, projectName, soil) {
 }
 
 #ssurgo results
-test <- harvest_results('Parlier', 'SteadyStateRuns', 'Milham_test')
+test <- harvest_results('Parlier', 'SteadyStateRuns', 'Capay v2')
+test
 tapply(test$biomass_kg_ha, test$crop_type, summary)
 
-compnames[order(compnames)]
 soils_to_report <- compnames[order(compnames)]
-soils_to_report <- compnames2
+
 
 for(i in seq_along(soils_to_report)) {
   test <- harvest_results('Parlier', 'SteadyStateRuns', soils_to_report[i])
+  print(soils_to_report[i])
+  print(tapply(test$biomass_kg_ha, test$crop_type, summary))
+}
+for(i in seq_along(soils_to_report)) {
+  test <- harvest_results('Davis', 'SteadyStateRuns', soils_to_report[i])
   print(soils_to_report[i])
   print(tapply(test$biomass_kg_ha, test$crop_type, summary))
 }
