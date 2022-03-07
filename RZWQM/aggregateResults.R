@@ -1,10 +1,38 @@
+library(extrafont)
+library(extrafontdb)
+# font_import() #only needs to be done one time after updating and re-installing R and moving and updating packages
+loadfonts(device = 'win')
 library(soilDB)
 library(aqp)
-workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
+# workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns'
+workDir #read-in from other scripts
 resultsDir <- file.path(workDir, 'Results')
 ssurgoDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/ssurgo_profile_data/RZWQM input'
+FiguresDir <- file.path(workDir, 'Figures')
+met_stn
+resultsDir
 list.files(resultsDir, recursive = FALSE)
 
+textural.class.calc <- function(sand, silt, clay) {
+  ifelse(is.na(sand) | is.na(silt) | is.na(clay), NA,
+         ifelse(sand + silt + clay > 101 |
+                  sand + silt + clay < 99, 'proportions do not sum to 100+-1',
+                ifelse(silt + 1.5 * clay < 15, 'sand',
+                       ifelse(silt + 1.5 * clay >= 15 & silt + 2 * clay < 30, 'loamy sand',
+                              ifelse((clay >= 7 & clay < 20 & sand > 52 & silt + 2 * clay >= 30) | 
+                                       (clay < 7 & silt < 50 & silt + 2 * clay >= 30), 'sandy loam',
+                                     ifelse(clay >= 7 & clay < 27 & silt >=28 & silt < 50 & sand <= 52, 'loam',
+                                            ifelse((silt >= 50 & clay >= 12 & clay < 27) | 
+                                                     (silt >=50 & silt < 80 & clay < 12), 'silt loam',
+                                                   ifelse(silt >= 80 & clay < 12, 'silt',
+                                                          ifelse(clay >= 20 & clay < 35 & silt < 28 & sand > 45, 'sandy clay loam',
+                                                                 ifelse(clay >= 27 & clay < 40 & sand > 20 & sand <= 45, 'clay loam',
+                                                                        ifelse(clay >= 27 & clay < 40 & sand <= 20, 'silty clay loam',
+                                                                               ifelse(clay >= 35 & sand > 45, 'sandy clay',
+                                                                                      ifelse(clay >= 40 & silt >= 40, 'silty clay',
+                                                                                             ifelse(clay >= 40 & sand <= 45 & silt < 40, 'clay',
+                                                                                                    'undefined textural class'))))))))))))))
+}
 # test <- list.files(file.path(resultsDir, 'Overall'), full.names = FALSE)
 # test2 <- unlist(strsplit(test[1], '_'))
 
@@ -20,11 +48,12 @@ overall_results <- do.call(rbind, mapply(function(x, y) {
   z$soil <- soilname
   z$scenario <- scenario
   z
-}, x=list.files(file.path(resultsDir, 'Overall'), full.names = TRUE), y=list.files(file.path(resultsDir, 'Overall'), full.names = FALSE), SIMPLIFY = FALSE))
+}, x=list.files(file.path(resultsDir, 'Overall', met_stn), full.names = TRUE), y=list.files(file.path(resultsDir, 'Overall', met_stn), full.names = FALSE), SIMPLIFY = FALSE))
 head(overall_results)
 overall_results$X <- NULL
+dim(overall_results)
+unique(overall_results$soil)
 
-#thi needs to be updated
 #read-in SSURGO data
 ssurgo_horizons <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize.csv'), stringsAsFactors = FALSE)
 colnames(ssurgo_horizons)
@@ -32,10 +61,11 @@ ssurgo_horizons2 <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize_pa
 colnames(ssurgo_horizons2)
 
 ssurgo_horizons <- rbind(ssurgo_horizons, ssurgo_horizons2)
+ssurgo_horizons$texture <- textural.class.calc(sand = ssurgo_horizons$sandtotal_r, silt = ssurgo_horizons$silttotal_r, clay = ssurgo_horizons$claytotal_r)
+
+#organize by compname
 comp_data <- data.frame(compnames=unique(ssurgo_horizons$compname), stringsAsFactors = FALSE)
 comp_data$SHR <- ssurgo_horizons$SHRname[match(comp_data$compnames, ssurgo_horizons$compname)]
-comp_data2 <- data.frame(compnames=c('CoarseSHR', 'LoamySHR', 'FineSHR'), SHR=unique(comp_data$SHR), stringsAsFactors = FALSE)
-comp_data <- rbind(comp_data, comp_data2)
 comp_data[order(comp_data$SHR),]
 table(comp_data$SHR)
 
@@ -59,9 +89,9 @@ overall_results$NO3_leached_delta_percent <- sapply(1:nrow(overall_results), fun
   control_leaching <- overall_results[overall_results$scenario=='Control',]
   round(100*(overall_results$NO3_leached_kgN_ha[x] - control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)]) / control_leaching$NO3_leached_kgN_ha[match(overall_results$soil[x], control_leaching$soil)], 2)
 })
-
+overall_results$ksat_cm_day <- comp_data$ksat_cm_day[match(overall_results$soil, comp_data$compnames)]
 #write to file
-write.csv(overall_results, file.path(resultsDir, 'Summaries', 'overall_results_Parlier.csv'), row.names = FALSE)
+write.csv(overall_results, file.path(resultsDir, 'Summaries', paste0('overall_results_', met_stn, '.csv')), row.names = FALSE)
 
 #summary stats
 tapply(overall_results$NO3_leached_kgN_ha[overall_results$scenario=='Control'], overall_results$SHR[overall_results$scenario=='Control'], summary)
@@ -80,11 +110,11 @@ Jan7d_NO3_leached_sd <- as.numeric(tapply(overall_results$NO3_leached_kgN_ha[ove
 nitrate_leached_matrix <- matrix(data = c(control_NO3_leached, Jan7d_NO3_leached), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 nitrate_leached_sd_matrix <- matrix(data = c(control_NO3_leached_sd, Jan7d_NO3_leached_sd), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 
-tiff(file = file.path(FiguresDir, 'ClimateRun figures', 'nitrate_leached_1.22.22.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
+tiff(file = file.path(FiguresDir, stn, 'nitrate_leached.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
 par(mar=c(2, 4.5, 1, 0.5), xpd=TRUE)
-bardims <- barplot(nitrate_leached_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(-10,100), ylab='')
-barplot(nitrate_leached_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(-10,100), add = TRUE)
-legend('topright', legend=c('Control', 'Flood-MAR'), bty='n', density = c(NA, 20), angle=45, fill = c('white', 'black'), border='black', col = 'black')
+bardims <- barplot(nitrate_leached_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(-5,50), ylab='')
+barplot(nitrate_leached_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(-5,50), add = TRUE)
+legend('topleft', legend=c('Control', 'Flood-MAR'), bty='n', density = c(NA, 20), angle=45, fill = c('white', 'black'), border='black', col = 'black')
 mtext(expression('Nitrate leached (kg N ha'^-1~'yr'^-1*')'), side=2, line=2.25)
 mtext('Coarse', side = 1, line=0, at=mean(bardims[1:2,1]))
 mtext('Loamy', side = 1, line=0, at=mean(bardims[1:2,2]))
@@ -105,10 +135,10 @@ Jan7d_denitrification_sd <- as.numeric(tapply(overall_results$denitrification_kg
 denitrification_matrix <- matrix(data = c(control_denitrification, Jan7d_denitrification), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 denitrification_sd_matrix <- matrix(data = c(control_denitrification_sd, Jan7d_denitrification_sd), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 
-tiff(file = file.path(FiguresDir, 'ClimateRun figures', 'denitrification_1.22.22.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
+tiff(file = file.path(FiguresDir, stn, 'denitrification.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
 par(mar=c(2, 4.5, 1, 0.5), xpd=TRUE)
-bardims <- barplot(denitrification_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(0,80), ylab='')
-barplot(denitrification_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(0,80), add = TRUE)
+bardims <- barplot(denitrification_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(0,30), ylab='')
+barplot(denitrification_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(0,30), add = TRUE)
 legend('topleft', legend=c('Control', 'Flood-MAR'), bty='n', density = c(NA, 20), angle=45, fill = c('white', 'black'), border='black', col = 'black')
 mtext(expression('Denitrification (kg N ha'^-1~'yr'^-1*')'), side=2, line=2.25)
 mtext('Coarse', side = 1, line=0, at=mean(bardims[1:2,1]))
@@ -130,11 +160,11 @@ Jan7d_mineralization_sd <- as.numeric(tapply(overall_results$net_min_kgN_ha[over
 mineralization_matrix <- matrix(data = c(control_mineralization, Jan7d_mineralization), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 mineralization_sd_matrix <- matrix(data = c(control_mineralization_sd, Jan7d_mineralization_sd), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 
-tiff(file = file.path(FiguresDir, 'ClimateRun figures', 'net_mineralization_1.22.22.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
+tiff(file = file.path(FiguresDir, stn, 'net_mineralization.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
 par(mar=c(2, 4.5, 1, 0.5), xpd=TRUE)
-bardims <- barplot(mineralization_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(0,150), ylab='')
-barplot(mineralization_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(0,150), add = TRUE)
-legend('topright', legend=c('Control', 'Flood-MAR'), bty='n', density = c(NA, 20), angle=45, fill = c('white', 'black'), border='black', col = 'black')
+bardims <- barplot(mineralization_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(0,100), ylab='')
+barplot(mineralization_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(0,100), add = TRUE)
+legend('topleft', legend=c('Control', 'Flood-MAR'), bty='n', density = c(NA, 20), angle=45, fill = c('white', 'black'), border='black', col = 'black')
 mtext(expression('Net mineralization (kg N ha'^-1~'yr'^-1*')'), side=2, line=2.25)
 mtext('Coarse', side = 1, line=0, at=mean(bardims[1:2,1]))
 mtext('Loamy', side = 1, line=0, at=mean(bardims[1:2,2]))
@@ -155,10 +185,10 @@ Jan7d_NO3_ppm_sd <- as.numeric(tapply(overall_results$NO3_ppm[overall_results$sc
 NO3_ppm_matrix <- matrix(data = c(control_NO3_ppm, Jan7d_NO3_ppm), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 NO3_ppm_sd_matrix <- matrix(data = c(control_NO3_ppm_sd, Jan7d_NO3_ppm_sd), nrow=2, ncol=3, byrow = TRUE, dimnames = list(c('control', 'Jan7d'), c('Coarse', 'Loamy', 'Fine')))
 
-tiff(file = file.path(FiguresDir, 'ClimateRun figures', 'NO3_ppm_1.22.22.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
+tiff(file = file.path(FiguresDir, stn, 'NO3_ppm.tif'), family = 'Times New Roman', width = 4.5, height = 4, pointsize = 12, units = 'in', res=800, compression='lzw')
 par(mar=c(2, 4.5, 1, 0.5), xpd=TRUE)
-bardims <- barplot(NO3_ppm_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(0,300), ylab='')
-barplot(NO3_ppm_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(0,300), add = TRUE)
+bardims <- barplot(NO3_ppm_matrix, beside=TRUE, names.arg = rep('', 3), col='white', cex.names=1, ylim = c(0,125), ylab='')
+barplot(NO3_ppm_matrix, beside=TRUE, col='black', names.arg = rep('', 3), density = rep(c(0,12), 3), angle = 45, ylim = c(0,125), add = TRUE)
 legend('topright', legend=c('Control', 'Flood-MAR'), bty='n', density = c(NA, 20), angle=45, fill = c('white', 'black'), border='black', col = 'black')
 mtext('Nitrate in deep percolation (ppm)', side=2, line=2.25)
 mtext('Coarse', side = 1, line=0, at=mean(bardims[1:2,1]))
@@ -209,24 +239,4 @@ test <- overall_results[overall_results$soil %in% compnames2,]
 test <- overall_results[overall_results$scenario=='Control',]
 test[order(test$SHR),]
 
-#create soil profile collection object
-#initialize spc object
-SSURGO_spc <- ssurgo_horizons
-depths(SSURGO_spc) <- cokey ~ hzdept_r + hzdepb_r
-depth_ck <- checkHzDepthLogic(SSURGO_spc)
-head(depth_ck)
-all(depth_ck$valid) #all good
-names(SSURGO_spc)
-#calculate profile weighted ksat to calc approx. days needed to apply 15 cm water
-profile_wtd_ksat <- profileApply(SSURGO_spc, FUN=function(x) {
-  profile_depth <- max(x$hzdepb_r)
-  horizon_wts <- (x$hzdepb_r - x$hzdept_r) / profile_depth
-  sum(x$ksat_r * horizon_wts)*24*3600/10000
-})
 
-comp_data$cokey <- ssurgo_horizons$cokey[match(comp_data$compnames, ssurgo_horizons$compname)]
-comp_data$ksat_cm_day <- profile_wtd_ksat[match(comp_data$cokey, as.integer(names(profile_wtd_ksat)))]
-
-comp_data$irrdays <- ifelse(comp_data$ksat_cm_day >= 15, 1, ceiling(15 / comp_data$ksat_cm_day))
-comp_data[order(comp_data$SHR),]
-write.csv(comp_data, file.path(ssurgoDir, 'comp_data_RZWQMruns_Feb22.csv'), row.names = FALSE)
