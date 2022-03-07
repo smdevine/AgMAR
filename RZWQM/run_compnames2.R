@@ -29,6 +29,7 @@ steady_state_helper2 <- function(soilnames, stn) {
 
 # compnames2 <- compnames2[c(2:3,12)]
 # compnames2 <- 'Merced'
+compnames2 <- c('Lofgren', 'Wekoda')
 #prepare steady state
 steady_state_helper(soilnames = compnames2, stn = 'Parlier')
 
