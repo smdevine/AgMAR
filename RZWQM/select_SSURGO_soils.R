@@ -136,7 +136,16 @@ esquon <- return_soil_by_compname('Esquon')
 esquon
 write.csv(esquon, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'esquon_Fine.csv'), row.names = FALSE)
 
-#stockton get
+#merced get
 merced <- return_soil_by_compname('Merced')
 merced
 write.csv(merced, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Merced_Fine.csv'), row.names = FALSE)
+
+#lofgren get
+lofgren <- return_soil_by_compname('Lofgren')
+write.csv(lofgren, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Lofgren_Fine.csv'), row.names = FALSE)
+
+#wekoda get
+print_soils_by_compname('Wekoda')
+wekoda <- return_soil_by_compname('Wekoda')
+write.csv(wekoda, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Wekoda_Fine.csv'), row.names = FALSE)
