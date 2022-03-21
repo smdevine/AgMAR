@@ -4,7 +4,7 @@ ssurgoDir2 <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/ssurgo_profile_da
 list.files(ssurgoDir2)
 comp_ksat <- read.csv(file.path(ssurgoDir2, 'comp_data_RZWQMruns_Feb22.csv'), stringsAsFactors = FALSE)
 comp_ksat$AgMARplan <- paste('days', comp_ksat$irrdays, sep = '')
-stress_soils <- c('Capay', 'Willows', 'Wekoda')
+# stress_soils <- c('Capay', 'Willows', 'Wekoda')
 fine_soils <- comp_ksat$compnames[which(comp_ksat$irrdays > 1 & comp_ksat$irrdays < 10)]
 fine_soils
 
@@ -109,7 +109,3 @@ AgMAR_runs_fine <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_plan
     steady_state_setup(station = stn, scenario = scn, soil = suelos[i], type = 'run 2', soil_input = suelo_input)
   }
 }
-
-
-comp_ksat[comp_ksat$compnames=='Wekoda',]
-comp_ksat[comp_ksat$compnames=='Lofgren',]
