@@ -207,6 +207,7 @@ precip_by_year <- data.frame(precip_mm=tapply(parlier_all_reformatted_final$prec
 precip_by_year[order(precip_by_year$precip_mm, decreasing = TRUE), ]
 wet_years <- row.names(precip_by_year)[order(precip_by_year[,1], decreasing = TRUE)][1:10]
 wet_years <- as.integer(wet_years)
+write.csv(data.frame(year=wet_years), file.path(workDir, 'Parlier_Stn39', 'wettest_ten_years.csv'), row.names = FALSE)
 
 add_floodMAR <- function(df, years, month, days, application) {
   df$precip_mm[df$year %in% wet_years & df$month==month & df$day %in% days] <- df$precip_mm[df$year %in% wet_years & df$month==month & df$day %in% days] + application
