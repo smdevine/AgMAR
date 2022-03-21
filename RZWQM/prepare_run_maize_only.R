@@ -341,3 +341,119 @@ AgMAR_runs_LF <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planti
     writeRZWQM(station = stn, scenario = scn, soil = suelos[i], input=gen_input, soil_input = suelo_input, planting_data = planting, fert_plan = fert, tillage_plan = tillage, Irr_plan = Irr)
   }
 }
+
+overall_results_fn <- function(station, projectName, soil) {
+  input <- readLines(file.path(workDir, station, projectName, soil, 'RZWQM.OUT'), n=2000)
+  initial_soilC <- input[grepl('INITAL TOTAL SOIL C KG C/HA:', input)]
+  initial_soilC <- as.numeric(unlist(strsplit(initial_soilC, ':'))[2]) #in kg C ha-1
+  final_soilC <- input[grepl('FINAL  TOTAL SOIL C KG C/HA:', input)]
+  final_soilC <- as.numeric(unlist(strsplit(final_soilC, ':'))[2]) #in kg C ha-1
+  initial_soilN <- input[grepl('INITAL TOTAL SOIL N KG N/HA:', input)]
+  initial_soilN <- as.numeric(unlist(strsplit(initial_soilN, ':'))[2]) #in kg N ha-1
+  final_soilN <- input[grepl('FINAL  TOTAL SOIL N KG N/HA:', input)]
+  final_soilN <- as.numeric(unlist(strsplit(final_soilN, ':'))[2]) #in kg N ha-1
+  denitrification <- input[grepl('LOSS TO DENITRIFICATION KG N/HA:', input)]
+  denitrification <- as.numeric(unlist(strsplit(denitrification, ':'))[2])
+  NO3_leaching <- input[grepl('LOSS TO SEEPAGE KG N/HA:', input)]
+  NO3_leaching <- as.numeric(unlist(strsplit(NO3_leaching, ':'))[2])
+  N_min <- input[grepl('TOTAL MINERALIZATION', input)][3]
+  N_min <- as.numeric(unlist(strsplit(N_min, 'MINERALIZATION'))[2])
+  N_imm <- input[grepl('TOTAL IMMOBILIZATION', input)]
+  N_imm <- as.numeric(unlist(strsplit(N_imm, 'IMMOBILIZATION'))[2])
+  fert_app <- input[grepl('TOTAL FERTILIZER APP', input)]
+  fert_app <- as.numeric(unlist(strsplit(fert_app, 'APP'))[2])
+  precip <- input[grepl('PRECIPITATION +[(]+CM+[)]', input)]
+  precip <- as.numeric(unlist(strsplit(precip, '[)]'))[2])
+  irr <- input[grepl('IRRIGATION +[(]+CM+[)]', input)]
+  irr <- as.numeric(unlist(strsplit(irr, '[)]'))[2])
+  runoff <- input[grepl('TOTAL SURFACE RUNOFF +[(]+CM+[)]', input)]
+  runoff <- as.numeric(unlist(strsplit(runoff, '[)]'))[2]) 
+  evap <- input[grepl('EVAPORATION FROM SOIL SURFACE +[(]+CM+[)]', input)]
+  evap <- as.numeric(unlist(strsplit(evap, '[)]'))[2])
+  trans <- input[grepl('PLANT UPTAKE FOR TRANSPIRATION +[(]+CM+[)]', input)]
+  trans <- as.numeric(unlist(strsplit(trans, '[)]'))[2])
+  DP <- input[grepl('DEEP SEEPAGE OUT OF PROFILE +[(]+CM+[)]', input)]
+  DP <- as.numeric(unlist(strsplit(DP, '[)]'))[2])
+  vol <- input[grepl('TOTAL VOLATILIZATION', input)]
+  vol <- as.numeric(unlist(strsplit(vol, 'VOLATILIZATION'))[2])
+  NO3_ppm <- 10* (NO3_leaching / DP)
+  result <- data.frame(initial_totalsoilMgC_ha=initial_soilC/1000, final_totalsoilMgC_ha=final_soilC/1000, initial_totalsoilkgN_ha=initial_soilN, final_totalsoilkgN_ha=final_soilN, denitrification_kgN_ha=denitrification, NO3_leached_kgN_ha=NO3_leaching, NO3_ppm=NO3_ppm, volatilized_kgN_ha=vol, fert_app_kgN_ha=fert_app, N_min_kgN_ha=N_min, N_imm_kgN_ha=N_imm, precip_cm=precip, irrigation_cm=irr, runoff_cm=runoff, evap_cm=evap, trans_cm=trans, DP_cm=DP)
+  # print(soil)
+  # print(result)
+  if(!dir.exists(file.path(workDir, 'Results', 'Overall', station))) {dir.create(file.path(workDir, 'Results', 'Overall', station))}
+  write.csv(result, file.path(workDir, 'Results', 'Overall', station, paste0(soil,'_', projectName, '_', station, '.csv')))
+}
+# overall_results_fn('Parlier', 'SteadyStateRuns', 'Capay')
+writeOverallResults <- function(compnames, scenario, weather_stn) {
+  for(i in 1:length(compnames))
+    overall_results_fn(station = weather_stn, projectName = scenario, soil = compnames[i])
+}
+
+N_MBL_season <- function(projectName, stn, soil) {
+  df <- readLines(file.path(workDir, stn, projectName, soil, 'MBLNIT.OUT'))
+  dailyMin <- df[grepl('DAILY MINERALIZATION', df)]
+  dailyImm <- df[grepl('DAILY IMMOBILIZATION', df)]
+  dailyDenit <- df[(which(grepl('N MASS BALANCE AT END OF DAY', df))-4)]
+  dailyLeaching <- df[(which(grepl('DAILY MINERALIZATION', df))-8)]
+  dailyVol <- df[(which(grepl('DAILY MINERALIZATION', df))-12)]
+  dailyMin <- as.numeric(gsub('DAILY MINERALIZATION', '', dailyMin))
+  dailyImm <- as.numeric(gsub('DAILY IMMOBILIZATION', '', dailyImm))
+  dailyDenit <- as.numeric(gsub('DENITRIFICATION', '', dailyDenit))
+  dailyLeaching <- as.numeric(gsub('SEEPAGE', '', dailyLeaching))
+  dailyVol <- as.numeric(gsub('VOLATILIZATION', '', dailyVol))
+  result <- data.frame(date=seq(as.Date("1983/10/1"), as.Date("2020/10/1"), "days"), mineralization_kg_ha=dailyMin, immobilization_kg_ha=dailyImm, denitrification_kg_ha=dailyDenit, leaching_kg_ha=dailyLeaching, volatilization_kg_ha=dailyVol, stringsAsFactors = FALSE)
+  result$net_min_kg_ha <- result$mineralization_kg_ha - result$immobilization_kg_ha
+  result$year <- format.Date(result$date, '%Y')
+  result$month <- format.Date(result$date, '%m')
+  result$day <- format.Date(result$date, '%d')
+  result$season <- ifelse(result$month %in% c('10', '11', '12', '01', '02', '03'), 'dormant', 'growing')
+  denitrification_season <- tapply(result$denitrification_kg_ha, result$season, sum)
+  mineralization_season <- tapply(result$mineralization_kg_ha, result$season, sum)
+  immobilization_season <- tapply(result$immobilization_kg_ha, result$season, sum)
+  leaching_season <- tapply(result$leaching_kg_ha, result$season, sum)
+  vol_season <- tapply(result$volatilization_kg_ha, result$season, sum)
+  net_min_season <- tapply(result$net_min_kg_ha, result$season, sum)
+  result <- data.frame(denitrification_kg_ha=denitrification_season, mineralization_kg_ha= mineralization_season, immobilization_kg_ha = immobilization_season, net_min_kg_ha=net_min_season, leaching_kg_ha=leaching_season, volatilization_kg_ha=vol_season)
+  result <- rbind(result, apply(result, 2, sum))
+  rownames(result)[3] <- 'total'
+  if(!dir.exists(file.path(workDir, 'Results', 'SeasonalFluxes', stn))) {dir.create(file.path(workDir, 'Results', 'SeasonalFluxes', stn))}
+  write.csv(result, file.path(workDir, 'Results', 'SeasonalFluxes', stn, paste0(soil,'_', projectName, '_', stn, '.csv')))
+}
+writeSeasonalResults <- function(compnames, scenario, weather_stn) {
+  for(i in 1:length(compnames))
+    N_MBL_season(projectName = scenario, stn = weather_stn, soil = compnames[i])
+}
+
+N_MBL_monthly <- function(projectName, stn, soil) {
+  df <- readLines(file.path(workDir, stn, projectName, soil, 'MBLNIT.OUT'))
+  dailyMin <- df[grepl('DAILY MINERALIZATION', df)]
+  dailyImm <- df[grepl('DAILY IMMOBILIZATION', df)]
+  dailyDenit <- df[(which(grepl('N MASS BALANCE AT END OF DAY', df))-4)]
+  dailyLeaching <- df[(which(grepl('DAILY MINERALIZATION', df))-8)]
+  dailyVol <- df[(which(grepl('DAILY MINERALIZATION', df))-12)]
+  dailyMin <- as.numeric(gsub('DAILY MINERALIZATION', '', dailyMin))
+  dailyImm <- as.numeric(gsub('DAILY IMMOBILIZATION', '', dailyImm))
+  dailyDenit <- as.numeric(gsub('DENITRIFICATION', '', dailyDenit))
+  dailyLeaching <- as.numeric(gsub('SEEPAGE', '', dailyLeaching))
+  dailyVol <- as.numeric(gsub('VOLATILIZATION', '', dailyVol))
+  result <- data.frame(date=seq(as.Date("1983/10/1"), as.Date("2020/10/1"), "days"), mineralization_kg_ha=dailyMin, immobilization_kg_ha=dailyImm, denitrification_kg_ha=dailyDenit, leaching_kg_ha=dailyLeaching, volatilization_kg_ha=dailyVol, stringsAsFactors = FALSE)
+  result$net_min_kg_ha <- result$mineralization_kg_ha - result$immobilization_kg_ha
+  result$year <- format.Date(result$date, '%Y')
+  result$month <- format.Date(result$date, '%m')
+  result$day <- format.Date(result$date, '%d')
+  denitrification_monthly <- tapply(result$denitrification_kg_ha, result$month, sum)
+  mineralization_monthly <- tapply(result$mineralization_kg_ha, result$month, sum)
+  immobilization_monthly <- tapply(result$immobilization_kg_ha, result$month, sum)
+  leaching_monthly <- tapply(result$leaching_kg_ha, result$month, sum)
+  vol_monthly <- tapply(result$volatilization_kg_ha, result$month, sum)
+  net_min_monthly <- tapply(result$net_min_kg_ha, result$month, sum)
+  result <- data.frame(denitrification_kg_ha=denitrification_monthly, mineralization_kg_ha= mineralization_monthly, immobilization_kg_ha = immobilization_monthly, net_min_kg_ha=net_min_monthly, leaching_kg_ha=leaching_monthly, volatilization_kg_ha=vol_monthly)
+  result <- rbind(result, apply(result, 2, sum))
+  rownames(result)[13] <- 'total'
+  if(!dir.exists(file.path(workDir, 'Results', 'MonthlyFluxes', stn))) {dir.create(file.path(workDir, 'Results', 'MonthlyFluxes', stn))}
+  write.csv(result, file.path(workDir, 'Results', 'MonthlyFluxes', stn, paste0(soil,'_', projectName, '_', stn, '.csv')))
+}
+writeMonthlyResults <- function(compnames, scenario, weather_stn) {
+  for(i in 1:length(compnames))
+    N_MBL_monthly(projectName = scenario, stn = weather_stn, soil = compnames[i])
+}
