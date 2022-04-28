@@ -1,8 +1,9 @@
 library(cimir)
 set_key(key = '4a7d3dc2-7431-46d1-9734-f28365113e68') #obtained through CIMIS web site account details page
 is_key_set()
-
-
+subDir <- 'Parlier_Stn39'
+stn_no <- 39
+met_stn <- 'Parlier'
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/cimis'
 
 #get metadata about station
@@ -204,10 +205,15 @@ writeClipboard(c('15/04/1984', '15/04/1985'))
 parlier_all_reformatted_final <- read.csv(file.path(workDir, 'Parlier_Stn39', 'parlier_1983_2021cimisQC.csv'), stringsAsFactors = FALSE)
 parlier_all_reformatted_final$precip_mm
 precip_by_year <- data.frame(precip_mm=tapply(parlier_all_reformatted_final$precip_mm, parlier_all_reformatted_final$year, sum))
+write.csv(precip_by_year, file.path(workDir, 'Parlier_Stn39', 'precip_by_year.csv'), row.names = TRUE)
 precip_by_year[order(precip_by_year$precip_mm, decreasing = TRUE), ]
 wet_years <- row.names(precip_by_year)[order(precip_by_year[,1], decreasing = TRUE)][1:10]
 wet_years <- as.integer(wet_years)
 write.csv(data.frame(year=wet_years), file.path(workDir, 'Parlier_Stn39', 'wettest_ten_years.csv'), row.names = FALSE)
+
+#look at precip by year and month
+precip_by_month <- tapply(cimis_all_reformatted_final$precip_mm, list(cimis_all_reformatted_final$year, cimis_all_reformatted_final$month), sum)
+write.csv(precip_by_month, file.path(workDir, subDir, 'precip_by_month.csv'), row.names = TRUE)
 
 add_floodMAR <- function(df, years, month, days, application) {
   df$precip_mm[df$year %in% wet_years & df$month==month & df$day %in% days] <- df$precip_mm[df$year %in% wet_years & df$month==month & df$day %in% days] + application
