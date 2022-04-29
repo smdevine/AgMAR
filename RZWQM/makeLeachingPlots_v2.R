@@ -1,4 +1,4 @@
-#add loss to volatization
+#add loss to volatization [done]
 library(extrafont)
 library(extrafontdb)
 # font_import() #only needs to be done one time after updating and re-installing R and moving and updating packages
@@ -47,23 +47,30 @@ dailyReport<- function(station, projectName, soil) {
 }
 
 #assemble datasets for plotting cumulative nitrate leached
-westhaven_control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', 'Westhaven')
-westhaven_AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', 'Westhaven')
+westhaven_control <- dailyReport(station = 'Davis', projectName = 'SteadyStateRuns', 'Westhaven')
+westhaven_AgMAR_21d <- dailyReport(station = 'Davis', projectName = 'AgMAR_21d', 'Westhaven')
 plot(westhaven_control$date, westhaven_control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim=c(0,1300))
 lines(westhaven_AgMAR_21d$date, westhaven_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
 
-kimberlina_control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', 'Kimberlina')
-kimberlina_AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', 'Kimberlina')
+kimberlina_control <- dailyReport(station = 'FivePoints', projectName = 'SteadyStateRuns', 'Kimberlina')
+kimberlina_AgMAR_21d <- dailyReport(station = 'FivePoints', projectName = 'AgMAR_21d', 'Kimberlina')
 plot(kimberlina_control$date, kimberlina_control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim=c(0,450))
 lines(kimberlina_AgMAR_21d$date, kimberlina_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
-plot(kimberlina_control$date, cumsum(kimberlina_control$NO3.FLUX.INTO.GW..UG.CM.2.DAY./10, type='l')
+plot(kimberlina_control$date, cumsum(kimberlina_control$NO3.FLUX.INTO.GW..UG.CM.2.DAY./10), type='l')
 lines(kimberlina_AgMAR_21d$date, kimberlina_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
 
-soils_to_report <- c(compnames, compnames2)
+columbia_control <- dailyReport(station = 'Shafter', projectName = 'SteadyStateRuns', 'Columbia')
+columbia_AgMAR_21d <- dailyReport(station = 'Shafter', projectName = 'AgMAR_21d', 'Columbia')
+plot(columbia_control$date, columbia_control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim=c(0,1300))
+lines(columbia_AgMAR_21d$date, columbia_AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
+
+soils_to_report <- compnames[order(compnames)]
+
+#all soils by climate
 #soil profile nitrate
 for(i in seq_along(soils_to_report)) {
-  control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', soils_to_report[i])
-  AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', soils_to_report[i])
+  control <- dailyReport(station = 'Davis', projectName = 'SteadyStateRuns', soils_to_report[i])
+  AgMAR_21d <- dailyReport(station = 'Davis', projectName = 'AgMAR_21d', soils_to_report[i])
   y_max <- max(control$TOTAL.NO3.N.IN.PROFILE..KG.HA., AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA.)  
   plot(control$date, control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim= c(0, y_max), col='red', ylab=expression('Soil profile nitrate (kg ha'^-1*')'), xlab='Year', main=soils_to_report[i])
   lines(AgMAR_21d$date, AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
@@ -71,10 +78,32 @@ for(i in seq_along(soils_to_report)) {
 
 #cumulative nitrate leached
 for(i in seq_along(soils_to_report)) {
-  control <- dailyReport(station = 'Parlier', projectName = 'SteadyStateRuns', soils_to_report[i])
-  AgMAR_21d <- dailyReport(station = 'Parlier', projectName = 'AgMAR_21d', soils_to_report[i])
+  control <- dailyReport(station = 'Davis', projectName = 'SteadyStateRuns', soils_to_report[i])
+  AgMAR_21d <- dailyReport(station = 'Davis', projectName = 'AgMAR_21d', soils_to_report[i])
   y_max <- max(control$NO3_cumulative, AgMAR_21d$NO3_cumulative)  
   plot(control$date, control$NO3_cumulative, type='l', ylim= c(0, y_max), col='red', ylab=expression('Cumulative nitrate leached (kg ha'^-1*')'), xlab='Year', main=soils_to_report[i])
+  lines(AgMAR_21d$date, AgMAR_21d$NO3_cumulative, col='blue')
+}
+
+#all climates
+#Cerini is typical fine-loamy soil
+#Kimberlina and Milham are typical coarse-loamy soil
+climates <- c('Durham', 'Davis', 'Parlier', 'FivePoints', 'Shafter')
+soil_to_report <- 'Kimberlina'
+for(i in 1:length(climates)) {
+  control <- dailyReport(station = climates[i], projectName = 'SteadyStateRuns', soil_to_report)
+  AgMAR_21d <- dailyReport(station = climates[i], projectName = 'AgMAR_21d', soil_to_report)
+  y_max <- max(control$TOTAL.NO3.N.IN.PROFILE..KG.HA., AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA.)  
+  plot(control$date, control$TOTAL.NO3.N.IN.PROFILE..KG.HA., type='l', ylim= c(0, y_max), col='red', ylab=expression('Soil profile nitrate (kg ha'^-1*')'), xlab='Year', main=climates[i])
+  lines(AgMAR_21d$date, AgMAR_21d$TOTAL.NO3.N.IN.PROFILE..KG.HA., col='blue')
+}
+
+#cumulative nitrate leached
+for(i in seq_along(climates)) {
+  control <- dailyReport(station = climates[i], projectName = 'SteadyStateRuns', soil_to_report)
+  AgMAR_21d <- dailyReport(station = climates[i], projectName = 'AgMAR_21d', soil_to_report)
+  y_max <- max(control$NO3_cumulative, AgMAR_21d$NO3_cumulative)  
+  plot(control$date, control$NO3_cumulative, type='l', ylim= c(0, y_max), col='red', ylab=expression('Cumulative nitrate leached (kg ha'^-1*')'), xlab='Year', main=climates[i])
   lines(AgMAR_21d$date, AgMAR_21d$NO3_cumulative, col='blue')
 }
 
@@ -147,38 +176,6 @@ as.Date('1984-07-22', format='%Y-%m-%d')
 dailyReport_df[dailyReport_df$date==as.Date('1984-07-22', format='%Y-%m-%d'),]
 
 
-#harvest data
-harvest_results <- function(station, projectName, soil) {
-  input <- readLines(file.path(workDir, station, projectName, soil, 'MANAGE.OUT'))
-  harvest_dates <- input[which(grepl('DSSAT Crop Harvest', input))+1]
-  harvest_dates <- strsplit(harvest_dates, '-----')
-  harvest_dates <- sapply(harvest_dates, function(x) x[1])
-  harvest_dates <- gsub('    ON  ', '', harvest_dates)
-  harvest_dates <- strsplit(harvest_dates, '[/]')
-  harvest_dates <- do.call(rbind, lapply(harvest_dates, function(x) {data.frame(month=x[2], day=x[1], year=x[3], stringsAsFactors = FALSE)}))
-  crop_type <- input[grepl('DSSAT Crop Harvest', input)]
-  crop_type <- strsplit(crop_type, '----')
-  crop_type <- sapply(crop_type, function(x) x[3])
-  biomass <- input[grepl('YIELD FROM ABOVE GROUND BIOMASS', input)]
-  biomass <- strsplit(biomass, ':')
-  biomass <- sapply(biomass, function(x){as.numeric(x[2])})
-  above_biomass_N <- input[grepl('TOTAL ABOVE GROUND NITROGEN', input)]
-  above_biomass_N <- strsplit(above_biomass_N, ':')
-  above_biomass_N <- sapply(above_biomass_N, function(x){as.numeric(x[2])})
-  below_biomass_N <- input[grepl('TOTAL BELOW GROUND NITROGEN', input)]
-  below_biomass_N <- strsplit(below_biomass_N, ':')
-  below_biomass_N <- sapply(below_biomass_N, function(x){as.numeric(x[2])})
-  harvest_info <- cbind(harvest_dates, crop_type, biomass_kg_ha=biomass, above_biomass_N_kg_ha=above_biomass_N, below_biomass_N_kg_ha=below_biomass_N, total_biomass_N_kg_ha=(above_biomass_N+below_biomass_N))
-  # harvest_info$date <- 
-  harvest_info$day <- as.integer(harvest_info$day)
-  harvest_info$month <- as.integer(harvest_info$month)
-  harvest_info$year <- as.integer(harvest_info$year)
-  harvest_info$date_harvest <- as.Date(paste0(harvest_info$year, '-', harvest_info$month, '-', harvest_info$day))
-  harvest_info[,1:3] <- NULL
-  harvest_info <- harvest_info[,c(ncol(harvest_info), 1:(ncol(harvest_info)-1))]
-  # print(harvest_info)
-  harvest_info
-}
 
 #ssurgo results
 test <- harvest_results('Parlier', 'SteadyStateRuns', 'Capay v2')
@@ -186,7 +183,7 @@ test
 tapply(test$biomass_kg_ha, test$crop_type, summary)
 
 soils_to_report <- compnames[order(compnames)]
-
+harvest_results('Shafter', 'AgMAR_Jan7d', 'Columbia')
 
 for(i in seq_along(soils_to_report)) {
   test <- harvest_results('Parlier', 'SteadyStateRuns', soils_to_report[i])
