@@ -1,4 +1,5 @@
 #important: read-in prepare_run_maize_only.R and fine_soil_functions.R first
+#then read this in to line 243 before running line by line manually
 met_stn <- 'Shafter'
 stn_no <- '5'
 compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare', 'Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers', 'Lofgren', 'Wekoda')
@@ -7,7 +8,7 @@ fine_soils
 stress_soils <- c('Capay', 'Clear Lake', 'Tulare', 'Wekoda', 'Tujunga', 'Pleito') #'Willows'
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/'
 cimisDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/cimis'
-wetyrs <- read.csv(file.path(cimisDir, paste0(met_stn, '_stn', stn_no), 'wettest_ten_years.csv'))
+wetyrs <- read.csv(file.path(cimisDir, paste0(met_stn, '_stn', stn_no), 'wettest_ten_years_WY.csv')) #using WY basis as deteriminant as of 4/6/22
 wetyrs <- as.character(wetyrs$year)
 wetyrs
 #read in relevant functions in prepare_run_maize_only.R
@@ -93,8 +94,8 @@ ipnames_fix_v2 <- function(station, project, scenario, soil, met_fname, brk_fnam
   writeLines(mzdssat[68:length(mzdssat)], con = fileconn2)
   close(fileconn2)
 }
-mzdssat <- readLines('C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/Shafter/AgMAR_Jan3d/Cerini/mzdssat.rzx')
-mzdssat[66]
+# mzdssat <- readLines('C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/Shafter/AgMAR_Jan3d/Cerini/mzdssat.rzx')
+# mzdssat[66]
 
 #need additional function for AgMAR scenarios that require winter crops to enable irrigation (see writeMgmtFiles_Flood_NoCC.R for example)
 writePlantingPlan_Silage <- function(corn_line1 = '1  15   4  1984  20.0   3 40000.0   0 -99.0   10 -99.0   -99',  corn_line2 = '               1 0.95   0 0.0  0 0 0', corn_line3 = '               10.0  0.95   4 0 0', start_year = 1984, end_year = 2020) { #harvest at 95% maturity with 95% harvest recovery of all aboveground biomass (10 cm cutting height)
@@ -228,6 +229,7 @@ automateRun <- function(soilnames, station, scenario, workDir_text, wait=FALSE, 
   close(runbat)
 }
 
+# compnames <- 'Lofgren'
 #prepare steady state templates
 for(i in 1:length(compnames)) {
   ipnames_fix_v2(station = met_stn, project = 'ClimateRuns_Silage', scenario = 'SteadyStateRuns', soil = compnames[i], met_fname = paste0(met_stn, '_1983_2021.MET'), brk_fname = paste0(met_stn, '_1983_2021.BRK'), ana_fname = paste0(compnames[i], '_SteadyStateRun.ana'))
@@ -295,26 +297,3 @@ for (j in 1:length(compnames)) {
   } else {AgMAR_runs_LF_Silage(stn = met_stn, scn = 'AgMAR_21d', suelos = compnames[j], AgMAR_month = c('1', '1', '2', '3'), AgMAR_days = c('8', '29', '19', '12'), fake_planting = c('7    1', '28   1', '18   2', '11   3'), fake_harvest = c('9 1', '30 1', '20 2', '13 3'), wetyears = wetyrs)}
 }
 automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_21d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = TRUE, wait_time = '12000')
-
-
-#Wekoda, Clear Lake, and Tulare also defined as stress soils on 2/28/22 and Capay v2 on 3/1/22
-writeOverallResults(compnames = compnames, scenario = 'SteadyStateRuns', weather_stn = met_stn)
-writeOverallResults(compnames = compnames, scenario = 'AgMAR_Jan3d', weather_stn = met_stn)
-writeOverallResults(compnames = compnames, scenario = 'AgMAR_Jan7d', weather_stn = met_stn)
-writeOverallResults(compnames = compnames, scenario = 'AgMAR_Mar3d', weather_stn = met_stn)
-writeOverallResults(compnames = compnames, scenario = 'AgMAR_Mar7d', weather_stn = met_stn)
-writeOverallResults(compnames = compnames, scenario = 'AgMAR_21d', weather_stn = met_stn)
-
-writeSeasonalResults(compnames = compnames, scenario = 'SteadyStateRuns', weather_stn = met_stn)
-writeSeasonalResults(compnames = compnames, scenario = 'AgMAR_Jan7d', weather_stn = met_stn)
-writeSeasonalResults(compnames = compnames, scenario = 'AgMAR_Jan3d', weather_stn = met_stn)
-writeSeasonalResults(compnames = compnames, scenario = 'AgMAR_Mar7d', weather_stn = met_stn)
-writeSeasonalResults(compnames = compnames, scenario = 'AgMAR_Mar3d', weather_stn = met_stn)
-writeSeasonalResults(compnames = compnames, scenario = 'AgMAR_21d', weather_stn = met_stn)
-
-writeMonthlyResults(compnames = compnames, scenario = 'SteadyStateRuns', weather_stn = met_stn)
-writeMonthlyResults(compnames = compnames, scenario = 'AgMAR_Jan7d', weather_stn = met_stn)
-writeMonthlyResults(compnames = compnames, scenario = 'AgMAR_Jan3d', weather_stn = met_stn)
-writeMonthlyResults(compnames = compnames, scenario = 'AgMAR_Mar7d', weather_stn = met_stn)
-writeMonthlyResults(compnames = compnames, scenario = 'AgMAR_Mar3d', weather_stn = met_stn)
-writeMonthlyResults(compnames = compnames, scenario = 'AgMAR_21d', weather_stn = met_stn)
