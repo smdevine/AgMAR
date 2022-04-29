@@ -1,18 +1,22 @@
 #to-do
 #1: make crop planting not dependent on soil moisture [done]
 #2: make fake winter cover crop planting and harvest functional regardless of whether the day in the date is single or double digits
+#3: Calc initial and final SON (Total Soil N less NO3-N) [done]
 #functions go to line 341
+
+#get all initial N pools from here down in mblnit.out : "---  1/10/1983 --- 274 --- TOTAL NITROGEN MASS BALANCE (KG/HA)"
+#get all final N pools from here down in mblnit.out : "---  1/10/2020 --- 275 --- TOTAL NITROGEN MASS BALANCE (KG/HA)"
+
 
 options(max.print = 15000)
 options(width=130)
-# workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns/'
+# workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/'
 copyRZINIT <- function(station, scenario, soil) {
   x <- readLines(file.path(workDir, station, scenario, soil, 'soil info', 'RZINIT.DAT')) #this file has to be manually copied into this directory after creation with the RZWQM GUI by entering soil information
   x_file <- file(file.path(workDir, station, scenario, soil, 'RZINIT.DAT'), 'w') #overwrite existing RZINIT.DAT file that was imported with template scenario
   writeLines(x, con = x_file)
   close(x_file)
 }
-
 
 templateRZWQM <- function(station, scenario, soil, fname) {
   input <- readLines(file.path(workDir, station, scenario, soil, fname))
@@ -342,8 +346,18 @@ AgMAR_runs_LF <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_planti
   }
 }
 
+# projectName <- 'SteadyStateRuns'
+# station <- 'Shafter'
+# soil <- 'Kimberlina'
+# initialday=274
+# finalday=13789
+
 overall_results_fn <- function(station, projectName, soil) {
-  input <- readLines(file.path(workDir, station, projectName, soil, 'RZWQM.OUT'), n=2000)
+  input <- readLines(file.path(workDir, station, projectName, soil, 'RZWQM.OUT'), n=14000)
+  initial_soilNO3 <- input[which(grepl('LOSS TO LATERAL FLOW KG N/HA:', input))+7]
+  initial_soilNO3 <- as.numeric(unlist(strsplit(initial_soilNO3, ' +'))[10])
+  final_soilNO3 <- input[which(grepl('LOSS TO LATERAL FLOW KG N/HA:', input))+13522]
+  final_soilNO3 <- as.numeric(unlist(strsplit(final_soilNO3, ' +'))[10])
   initial_soilC <- input[grepl('INITAL TOTAL SOIL C KG C/HA:', input)]
   initial_soilC <- as.numeric(unlist(strsplit(initial_soilC, ':'))[2]) #in kg C ha-1
   final_soilC <- input[grepl('FINAL  TOTAL SOIL C KG C/HA:', input)]
@@ -360,6 +374,12 @@ overall_results_fn <- function(station, projectName, soil) {
   N_min <- as.numeric(unlist(strsplit(N_min, 'MINERALIZATION'))[2])
   N_imm <- input[grepl('TOTAL IMMOBILIZATION', input)]
   N_imm <- as.numeric(unlist(strsplit(N_imm, 'IMMOBILIZATION'))[2])
+  N2O_loss_nitri <- input[grepl('N2O LOSS FROM NITRIFICATION KG N/HA:', input)]
+  N2O_loss_nitri <- as.numeric(unlist(strsplit(N2O_loss_nitri, ':'))[2])
+  NxO_loss_nitri <- input[grepl('NxO LOSS FROM NITRIFICATION KG N/HA:', input)]
+  NxO_loss_nitri <- as.numeric(unlist(strsplit(NxO_loss_nitri, ':'))[2])
+  NxO_abs_nitri <- input[grepl('NxO ABSORBED FROM NITRIFICATION KG N/HA:', input)]
+  NxO_abs_nitri <- as.numeric(unlist(strsplit(NxO_abs_nitri, ':'))[2])
   fert_app <- input[grepl('TOTAL FERTILIZER APP', input)]
   fert_app <- as.numeric(unlist(strsplit(fert_app, 'APP'))[2])
   precip <- input[grepl('PRECIPITATION +[(]+CM+[)]', input)]
@@ -377,7 +397,7 @@ overall_results_fn <- function(station, projectName, soil) {
   vol <- input[grepl('TOTAL VOLATILIZATION', input)]
   vol <- as.numeric(unlist(strsplit(vol, 'VOLATILIZATION'))[2])
   NO3_ppm <- 10* (NO3_leaching / DP)
-  result <- data.frame(initial_totalsoilMgC_ha=initial_soilC/1000, final_totalsoilMgC_ha=final_soilC/1000, initial_totalsoilkgN_ha=initial_soilN, final_totalsoilkgN_ha=final_soilN, denitrification_kgN_ha=denitrification, NO3_leached_kgN_ha=NO3_leaching, NO3_ppm=NO3_ppm, volatilized_kgN_ha=vol, fert_app_kgN_ha=fert_app, N_min_kgN_ha=N_min, N_imm_kgN_ha=N_imm, precip_cm=precip, irrigation_cm=irr, runoff_cm=runoff, evap_cm=evap, trans_cm=trans, DP_cm=DP)
+  result <- data.frame(initial_totalsoilMgC_ha=initial_soilC/1000, final_totalsoilMgC_ha=final_soilC/1000, initial_kgNO3_ha=initial_soilNO3, final_kgNO3_ha=final_soilNO3, initial_totalsoilkgN_ha=initial_soilN, final_totalsoilkgN_ha=final_soilN, denitrification_kgN_ha=denitrification, NO3_leached_kgN_ha=NO3_leaching, NO3_ppm=NO3_ppm, volatilized_kgN_ha=vol, fert_app_kgN_ha=fert_app, N_min_kgN_ha=N_min, N_imm_kgN_ha=N_imm, N2O_loss_nitri=N2O_loss_nitri, NxO_loss_nitri=NxO_loss_nitri, NxO_abs_nitri=NxO_abs_nitri, precip_cm=precip, irrigation_cm=irr, runoff_cm=runoff, evap_cm=evap, trans_cm=trans, DP_cm=DP)
   # print(soil)
   # print(result)
   if(!dir.exists(file.path(workDir, 'Results', 'Overall', station))) {dir.create(file.path(workDir, 'Results', 'Overall', station))}
@@ -456,4 +476,46 @@ N_MBL_monthly <- function(projectName, stn, soil) {
 writeMonthlyResults <- function(compnames, scenario, weather_stn) {
   for(i in 1:length(compnames))
     N_MBL_monthly(projectName = scenario, stn = weather_stn, soil = compnames[i])
+}
+#temp args
+station <- 'Shafter'
+projectName <- 'AgMAR_Jan3d'
+soil <- 'Kimberlina'
+#harvest data
+harvest_results_fn <- function(station, projectName, soil) {
+  input <- readLines(file.path(workDir, station, projectName, soil, 'MANAGE.OUT'), skipNul = TRUE)
+  harvest_dates <- input[which(grepl('----DSSAT Crop Harvest----MAIZE 990001 LONG SEASON', input))+1]
+  harvest_dates <- strsplit(harvest_dates, '-----')
+  harvest_dates <- sapply(harvest_dates, function(x) x[1])
+  harvest_dates <- gsub('    ON  ', '', harvest_dates)
+  harvest_dates <- strsplit(harvest_dates, '[/]')
+  harvest_dates <- do.call(rbind, lapply(harvest_dates, function(x) {data.frame(month=x[2], day=x[1], year=x[3], stringsAsFactors = FALSE)}))
+  crop_type <- input[grepl('----DSSAT Crop Harvest----MAIZE 990001 LONG SEASON', input)]
+  crop_type <- strsplit(crop_type, '----')
+  crop_type <- sapply(crop_type, function(x) x[3])
+  biomass <- input[which(grepl('----DSSAT Crop Harvest----MAIZE 990001 LONG SEASON', input))+7]
+  biomass <- strsplit(biomass, ':')
+  biomass <- sapply(biomass, function(x){as.numeric(x[2])})
+  above_biomass_N <- input[which(grepl('----DSSAT Crop Harvest----MAIZE 990001 LONG SEASON', input))+12]
+  above_biomass_N <- strsplit(above_biomass_N, ':')
+  above_biomass_N <- sapply(above_biomass_N, function(x){as.numeric(x[2])})
+  below_biomass_N <- input[which(grepl('----DSSAT Crop Harvest----MAIZE 990001 LONG SEASON', input))+13]
+  below_biomass_N <- strsplit(below_biomass_N, ':')
+  below_biomass_N <- sapply(below_biomass_N, function(x){as.numeric(x[2])})
+  harvest_info <- cbind(harvest_dates, crop_type, biomass_kg_ha=biomass, above_biomass_N_kg_ha=above_biomass_N, below_biomass_N_kg_ha=below_biomass_N, total_biomass_N_kg_ha=(above_biomass_N+below_biomass_N))
+  # harvest_info$date <- 
+  harvest_info$day <- as.integer(harvest_info$day)
+  harvest_info$month <- as.integer(harvest_info$month)
+  harvest_info$year <- as.integer(harvest_info$year)
+  harvest_info$date_harvest <- as.Date(paste0(harvest_info$year, '-', harvest_info$month, '-', harvest_info$day))
+  harvest_info[,1:3] <- NULL
+  harvest_info <- harvest_info[,c(ncol(harvest_info), 1:(ncol(harvest_info)-1))]
+  # print(harvest_info)
+  harvest_info
+  if(!dir.exists(file.path(workDir, 'Results', 'Yields', station))) {dir.create(file.path(workDir, 'Results', 'Yields', station))}
+  write.csv(harvest_info, file.path(workDir, 'Results', 'Yields', station, paste0(soil,'_', projectName, '_', station, '.csv')))
+}
+writeHarvestResults <- function(compnames, scenario, weather_stn) {
+  for(i in 1:length(compnames))
+    harvest_results_fn(station = weather_stn, projectName = scenario, soil = compnames[i])
 }
