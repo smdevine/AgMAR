@@ -6,8 +6,6 @@
 
 #get all initial N pools from here down in mblnit.out : "---  1/10/1983 --- 274 --- TOTAL NITROGEN MASS BALANCE (KG/HA)"
 #get all final N pools from here down in mblnit.out : "---  1/10/2020 --- 275 --- TOTAL NITROGEN MASS BALANCE (KG/HA)"
-
-
 options(max.print = 15000)
 options(width=130)
 # workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/'
@@ -17,9 +15,23 @@ copyRZINIT <- function(station, scenario, soil) {
   writeLines(x, con = x_file)
   close(x_file)
 }
-
-templateRZWQM <- function(station, scenario, soil, fname) {
+# station <- 'Shafter'
+# scenario <- 'SteadyStateRuns'
+# soil <- 'Kimberlina'
+# fname <- 'RZWQM_init.DAT'
+# slowOMdecay <- '3.600E-09'
+templateRZWQM <- function(station, scenario, soil, fname, ChangeOMdecay=FALSE, fastOMdecay='2.500E-07', intOMdecay='5.000E-08', slowOMdecay='4.500E-10', ChangeRvals=FALSE, R34=0.6, R45=0.4) {
   input <- readLines(file.path(workDir, station, scenario, soil, fname))
+  if(ChangeOMdecay) {
+    om_decay <- unlist(strsplit(input[which(grepl('INDIVIDUAL OM DECAY "A" VALUES', input))+6], '  '))
+    om_decay <- paste(c(om_decay[1:2], fastOMdecay, intOMdecay, slowOMdecay), collapse =  '  ')
+    input[which(grepl('INDIVIDUAL OM DECAY "A" VALUES', input))+6] <- om_decay
+  }
+  if(ChangeRvals) {
+    Rvals <- unlist(strsplit(input[which(grepl('OM TRANSFORMATION DISTRIBUTION CONSTANTS', input))+13], '  '))
+    Rvals <- paste(c(Rvals[1:2], R34, Rvals[4], R45, Rvals[6]), collapse = '  ')
+    input[which(grepl('OM TRANSFORMATION DISTRIBUTION CONSTANTS', input))+13] <- Rvals
+  }
   input
 }
 soilInfo <- function(station, scenario, soil, fname) {
@@ -302,7 +314,7 @@ steady_state_setup <- function(station, scenario, soil, type, soil_input) {
     writeLines(cntrl, con = writeFile)
     close(writeFile)
   } else {
-      cntrl[length(cntrl)] <- '1   0   0   0   1   1   1   1   0   0   1   0' #reading in but not writing binary file
+      cntrl[length(cntrl)] <- '1   0   0   0   1   1   1   1   0   0   1   0' #reading in but not writing binary file for copying to Flood-MAR subdirectories
       writeFile <- file(file.path(workDir, station, scenario, soil, 'CNTRL.DAT'), 'w')
       writeLines(cntrl, con = writeFile)
       close(writeFile)
