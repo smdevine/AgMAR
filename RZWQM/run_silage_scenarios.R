@@ -1,14 +1,15 @@
 #important: read-in prepare_run_maize_only.R and fine_soil_functions.R first
-#then read this in to line 243 before running line by line manually
+#then read this in to line 231 before running line by line manually
 met_stn <- 'Shafter'
 stn_no <- '5'
-compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare', 'Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers', 'Lofgren', 'Wekoda')
+compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Tehama', 'Capay', 'Clear Lake', 'Tulare', 'Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Lokern', 'Merced', 'Cropley', 'Tachi', 'Myers', 'Lofgren', 'Wekoda', 'Guijarral', 'Granoso', 'Chanac')
 compnames <- compnames[order(compnames)]
+compnames
 fine_soils
 stress_soils <- c('Capay', 'Clear Lake', 'Tulare', 'Wekoda', 'Tujunga', 'Pleito') #'Willows'
 workDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage/'
 cimisDir <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/cimis'
-wetyrs <- read.csv(file.path(cimisDir, paste0(met_stn, '_stn', stn_no), 'wettest_ten_years_WY.csv')) #using WY basis as deteriminant as of 4/6/22
+wetyrs <- read.csv(file.path(cimisDir, paste0(met_stn, '_stn', stn_no), 'wettest_ten_years_WY.csv')) #using WY basis as determinant as of 4/6/22
 wetyrs <- as.character(wetyrs$year)
 wetyrs
 #read in relevant functions in prepare_run_maize_only.R
@@ -162,7 +163,7 @@ AgMAR_runs_Silage <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake_pl
     ana <- paste0(suelos[i], '_', scn, '.ana')
     ipnames_fix_v2(station = stn, project = 'ClimateRuns_Silage', scenario = scn, soil = suelos[i], met_fname = met, brk_fname = brk, ana_fname = ana)
     copyRZINIT(stn, scn, suelos[i])
-    gen_input <- templateRZWQM(stn, scn, suelos[i], 'RZWQM_init.DAT')
+    gen_input <- templateRZWQM(station=stn, scenario=scn, soil=suelos[i], fname='RZWQM_init.DAT', ChangeOMdecay = TRUE, fastOMdecay = '2.500E-07', intOMdecay = '5.000E-08', slowOMdecay='4.500E-10', ChangeRvals = TRUE, R34=0.1, R45 = 0.1)
     suelo_input <- soilInfo(stn, scn, suelos[i], 'RZWQM.DAT')
     planting <- writePlantingPlan_AgMAR_Silage(wet_years=as.integer(wetyears), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
     fert <- writeFertPlan(end_year = 2020)
@@ -180,7 +181,7 @@ AgMAR_runs_LF_Silage <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fake
     ana <- paste0(suelos[i], '_', scn, '.ana')
     ipnames_fix_v2(station = stn, project = 'ClimateRuns_Silage', scenario = scn, soil = suelos[i], met_fname = met, brk_fname = brk, ana_fname = ana)
     # copyRZINIT(stn, scn, suelos[i])
-    gen_input <- templateRZWQM(stn, scn, suelos[i], 'RZWQM_init.DAT')
+    gen_input <- templateRZWQM(station=stn, scenario=scn, soil=suelos[i], fname='RZWQM_init.DAT', ChangeOMdecay = TRUE, fastOMdecay = '2.500E-07', intOMdecay = '5.000E-08', slowOMdecay='4.500E-10', ChangeRvals = TRUE, R34=0.1, R45 = 0.1)
     suelo_input <- soilInfo(stn, scn, suelos[i], 'RZWQM.DAT')
     planting <- writePlantingPlan_AgMAR_LF_Silage(wet_years=as.integer(wetyears), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
     fert <- writeFertPlan(end_year = 2020)
@@ -201,7 +202,7 @@ AgMAR_runs_fine_silage <- function(stn, scn, suelos, AgMAR_month, AgMAR_days, fa
     ana <- paste0(suelos[i], '_', scn, '.ana')
     ipnames_fix_v2(station = stn, project = 'ClimateRuns_Silage', scenario = scn, soil = suelos[i], met_fname = met, brk_fname = brk, ana_fname = ana)
     # copyRZINIT(stn, scn, suelos[i])
-    gen_input <- templateRZWQM(stn, scn, suelos[i], 'RZWQM_init.DAT')
+    gen_input <- templateRZWQM(station=stn, scenario=scn, soil=suelos[i], fname='RZWQM_init.DAT', ChangeOMdecay = TRUE, fastOMdecay = '2.500E-07', intOMdecay = '5.000E-08', slowOMdecay='4.500E-10', ChangeRvals = TRUE, R34=0.1, R45 = 0.1)
     suelo_input <- soilInfo(stn, scn, suelos[i], 'RZWQM.DAT')
     planting <- writePlantingPlan_AgMAR_Silage(wet_years=as.integer(wetyears), rye_date_planting = fake_planting, rye_date_harvest = fake_harvest)
     fert <- writeFertPlan(end_year = 2020)
@@ -228,13 +229,13 @@ automateRun <- function(soilnames, station, scenario, workDir_text, wait=FALSE, 
   }
   close(runbat)
 }
-
-# compnames <- 'Lofgren'
+# compnames <- c('Guijarral', 'Granoso', 'Chanac')
+compnames <- 'Granoso'
 #prepare steady state templates
 for(i in 1:length(compnames)) {
   ipnames_fix_v2(station = met_stn, project = 'ClimateRuns_Silage', scenario = 'SteadyStateRuns', soil = compnames[i], met_fname = paste0(met_stn, '_1983_2021.MET'), brk_fname = paste0(met_stn, '_1983_2021.BRK'), ana_fname = paste0(compnames[i], '_SteadyStateRun.ana'))
   copyRZINIT(met_stn, 'SteadyStateRuns', compnames[i])
-  gen_input <- templateRZWQM(met_stn, 'SteadyStateRuns', compnames[i], 'RZWQM_init.DAT')
+  gen_input <- templateRZWQM(met_stn, 'SteadyStateRuns', compnames[i], 'RZWQM_init.DAT', ChangeOMdecay = TRUE, fastOMdecay = '2.500E-07', intOMdecay = '5.000E-08', slowOMdecay='4.500E-10', ChangeRvals = TRUE, R34=0.1, R45 = 0.1) #default is fastOMdecay=2.500E-07, intOMdecay=5.000E-08, and slowOMdecay=4.500E-10 and ChangeOMdecay=FALSE; and ChangeRvals=FALSE, R45=0.4
   suelo <- soilInfo(met_stn, 'SteadyStateRuns', compnames[i], 'RZWQM.DAT')
   planting <- writePlantingPlan_Silage()
   fert <- writeFertPlan(end_year = 2020)
@@ -272,7 +273,7 @@ for (j in 1:length(compnames)) {
     AgMAR_runs_fine_silage(stn = met_stn, scn = 'AgMAR_Jan7d', suelos = compnames[j], AgMAR_month = AgMAR_7d_irrmonths_early, AgMAR_days = AgMAR_7d_irrdays_early,  fake_planting = '1    1   1992', fake_harvest = '25 2 1992', comp_df = comp_ksat, wetyears = wetyrs)
   } else {AgMAR_runs_Silage(stn = met_stn, scn = 'AgMAR_Jan7d', suelos = compnames[j], AgMAR_month = '1', AgMAR_days = c('5', '12', '19', '26'), fake_planting = '4    1   1992', fake_harvest = '27 1 1992', wetyears = wetyrs)}
 }
-automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_Jan7d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = TRUE, wait_time = '3000')#
+automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_Jan7d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = F, wait_time = '300')#'3000' for all soils
 
 #Mar 3d interval
 for (j in 1:length(compnames)) {
@@ -280,7 +281,7 @@ for (j in 1:length(compnames)) {
     AgMAR_runs_fine_silage(stn = met_stn, scn = 'AgMAR_Mar3d', suelos = compnames[j], AgMAR_month = AgMAR_3d_irrmonths_late, AgMAR_days = AgMAR_3d_irrdays_late,  fake_planting = '9    2   1992', fake_harvest = '13 4 1992', comp_df = comp_ksat, wetyears = wetyrs)
   } else {AgMAR_runs_Silage(stn = met_stn, scn = 'AgMAR_Mar3d', suelos = compnames[j], AgMAR_month = '3', AgMAR_days = c('11', '14', '17', '20'), fake_planting = '4    3   1992', fake_harvest = '27 3 1992', wetyears = wetyrs)}
 }
-automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_Mar3d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = TRUE, wait_time = '6000')
+automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_Mar3d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = F, wait_time = '600')
 
 #Mar 7d interval
 for (j in 1:length(compnames)) {
@@ -288,7 +289,7 @@ for (j in 1:length(compnames)) {
     AgMAR_runs_fine_silage(stn = met_stn, scn = 'AgMAR_Mar7d', suelos = compnames[j], AgMAR_month = AgMAR_7d_irrmonths_late, AgMAR_days = AgMAR_7d_irrdays_late,  fake_planting = '9    2   1992', fake_harvest = '13 4 1992', comp_df = comp_ksat, wetyears = wetyrs)
   } else {AgMAR_runs_Silage(stn = met_stn, scn = 'AgMAR_Mar7d', suelos = compnames[j], AgMAR_month = '3', AgMAR_days = c('5', '12', '19', '26'), fake_planting = '4    3   1992', fake_harvest = '27 3 1992', wetyears = wetyrs)}
 }
-automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_Mar7d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = TRUE, wait_time = '9000')
+automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_Mar7d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = F, wait_time = '900')
 
 #21-day interval starting Jan 7
 for (j in 1:length(compnames)) {
@@ -296,4 +297,4 @@ for (j in 1:length(compnames)) {
     AgMAR_runs_fine_silage(stn = met_stn, scn = 'AgMAR_21d', suelos = compnames[j], AgMAR_month = AgMAR_21d_irrmonths, AgMAR_days = AgMAR_21d_irrdays,  fake_planting = '1    1   1992', fake_harvest = '13 4 1992', comp_df = comp_ksat, wetyears = wetyrs)
   } else {AgMAR_runs_LF_Silage(stn = met_stn, scn = 'AgMAR_21d', suelos = compnames[j], AgMAR_month = c('1', '1', '2', '3'), AgMAR_days = c('8', '29', '19', '12'), fake_planting = c('7    1', '28   1', '18   2', '11   3'), fake_harvest = c('9 1', '30 1', '20 2', '13 3'), wetyears = wetyrs)}
 }
-automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_21d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = TRUE, wait_time = '12000')
+automateRun(soilnames = compnames, station = met_stn, scenario = 'AgMAR_21d', workDir_text = 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/projects/PulseSoilClimate/ClimateRuns_Silage', wait = F, wait_time = '1200')
