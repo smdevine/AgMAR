@@ -2,7 +2,7 @@
 #read in depth-weighted profile ksat
 ssurgoDir2 <- 'C:/Users/smdevine/Desktop/post doc/Dahlke/RZWQM/ssurgo_profile_data/RZWQM input'
 list.files(ssurgoDir2)
-comp_ksat <- read.csv(file.path(ssurgoDir2, 'comp_data_RZWQMruns_Feb22.csv'), stringsAsFactors = FALSE)
+comp_ksat <- read.csv(file.path(ssurgoDir2, 'comp_data_RZWQMruns_Jun22.csv'), stringsAsFactors = FALSE) #updated with three additional soils on 6/21/22
 comp_ksat$AgMARplan <- paste('days', comp_ksat$irrdays, sep = '')
 # stress_soils <- c('Capay', 'Willows', 'Wekoda')
 fine_soils <- comp_ksat$compnames[which(comp_ksat$irrdays > 1 & comp_ksat$irrdays < 10)]
