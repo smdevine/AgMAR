@@ -50,7 +50,13 @@ depth_ck <- checkHzDepthLogic(SSURGO_spc)
 head(depth_ck)
 all(depth_ck$valid) #all good
 # site(SSURGO_spc) <- ~ SHRname
-
+return_soil_by_compname <- function(x) {
+  y <- SSURGO_horizons[SSURGO_horizons$compname==x,]
+  cokeys <- as.character(unique(y$cokey))
+  cokey <- sample(cokeys, size = 1)
+  soil <- y[as.character(y$cokey)==cokey,]
+  soil
+}
 compnames <- c('Hanford', 'Delhi', 'Wasco', 'Hesperia', 'Milham', 'Tujunga', 'Panoche', 'Cerini', 'Yolo', 'Colpien', 'Channac', 'Tehama', 'Capay', 'Clear Lake', 'Willows', 'Tulare')
 compnames2 <- c('Kimberlina', 'Columbia', 'Excelsior', 'Atwater', 'Rincon', 'Sycamore', 'Conejo', 'Westhaven', 'Pleito', 'Jacktone', 'Porterville', 'Lokern', 'Myers', 'Esquon', 'Hollenbeck')
 print_soils_by_compname <- function(x) {
@@ -62,20 +68,13 @@ for(i in seq_along(compnames2)) {
   print_soils_by_compname(compnames2[i])
 }
 compnames <- compnames[compnames != 'Channac']
-return_soil_by_compname <- function(x) {
-  y <- SSURGO_horizons[SSURGO_horizons$compname==x,]
-  cokeys <- as.character(unique(y$cokey))
-  cokey <- sample(cokeys, size = 1)
-  soil <- y[as.character(y$cokey)==cokey,]
-  soil
-}
 soils_to_run <- do.call(rbind, lapply(compnames2, return_soil_by_compname))
 soils_to_run
 dim(soils_to_run)
 unique(soils_to_run$compname)
 length(unique(soils_to_run$cokey))
 soils_to_run$texture <- textural.class.calc(sand = soils_to_run$sandtotal_r, silt = soils_to_run$silttotal_r, clay = soils_to_run$claytotal_r)
-write.csv(soils_to_run, file.path(resultsDir, 'RZWQM input', 'SSURGO_soils_to_initialize_part2.csv'), row.names = FALSE) #not that compnames2 produced this file
+write.csv(soils_to_run, file.path(resultsDir, 'RZWQM input', 'SSURGO_soils_to_initialize_part2.csv'), row.names = FALSE) #note that compnames2 produced this file
 
 #capay re-run
 capay <- return_soil_by_compname('Capay')
@@ -149,3 +148,31 @@ write.csv(lofgren, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 
 print_soils_by_compname('Wekoda')
 wekoda <- return_soil_by_compname('Wekoda')
 write.csv(wekoda, file.path(resultsDir, 'RZWQM input', 'soils to rerun part2', 'Wekoda_Fine.csv'), row.names = FALSE)
+
+#granoso get
+print_soils_by_compname('Granoso')
+Granoso <- return_soil_by_compname('Granoso')
+write.csv(Granoso, file.path(resultsDir, 'RZWQM input', 'soils to run part3', 'Granoso_coarse.csv'), row.names = FALSE)
+
+#Delano get
+print_soils_by_compname('Delano')
+Delano <- return_soil_by_compname('Delano')
+Delano
+write.csv(Delano, file.path(resultsDir, 'RZWQM input', 'soils to run part3', 'Delano_coarse.csv'), row.names = FALSE)
+
+#Chanac get
+print_soils_by_compname('Chanac')
+Chanac <- return_soil_by_compname('Chanac')
+Chanac
+write.csv(Chanac, file.path(resultsDir, 'RZWQM input', 'soils to run part3', 'Chanac_loamy.csv'), row.names = FALSE)
+
+#Dinuba get
+print_soils_by_compname('Dinuba')
+Dinuba <- return_soil_by_compname('Dinuba')
+Dinuba #OM is NA in 2Bk3 and 4, so cannot use Dinuba
+write.csv(Dinuba, file.path(resultsDir, 'RZWQM input', 'soils to run part3', 'Dinuba_coarse.csv'), row.names = FALSE)
+
+print_soils_by_compname('Guijarral')
+Guijarral <- return_soil_by_compname('Guijarral')
+Guijarral
+write.csv(Guijarral, file.path(resultsDir, 'RZWQM input', 'soils to run part3', 'Guijarral_coarse.csv'), row.names = FALSE)
