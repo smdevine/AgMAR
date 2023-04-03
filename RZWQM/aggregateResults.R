@@ -57,16 +57,19 @@ overall_results$X <- NULL
 # unique(overall_results$soil)
 # lapply(overall_results, summary)
 overall_results <- overall_results[order(overall_results$NO3_leached_kgN_ha),]
-# utils::View(overall_results)
+utils::View(overall_results)
 
 #read-in SSURGO data
 ssurgo_horizons <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize.csv'), stringsAsFactors = FALSE)
 # colnames(ssurgo_horizons)
 ssurgo_horizons2 <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize_part2.csv'), stringsAsFactors = FALSE)
 # colnames(ssurgo_horizons2)
+ssurgo_horizons3 <- read.csv(file.path(ssurgoDir, 'SSURGO_soils_to_initialize_part3.csv'), stringsAsFactors = FALSE)
+# colnames(ssurgo_horizons3)
 
-ssurgo_horizons <- rbind(ssurgo_horizons, ssurgo_horizons2)
+ssurgo_horizons <- rbind(ssurgo_horizons, ssurgo_horizons2, ssurgo_horizons3)
 ssurgo_horizons$texture <- textural.class.calc(sand = ssurgo_horizons$sandtotal_r, silt = ssurgo_horizons$silttotal_r, clay = ssurgo_horizons$claytotal_r)
+length(unique(ssurgo_horizons$compname))
 
 #organize by compname
 comp_data <- data.frame(compnames=unique(ssurgo_horizons$compname), stringsAsFactors = FALSE)
