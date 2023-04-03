@@ -1,0 +1,4 @@
+#to-do: (1) make soil depth profile Figure for %clay by textural groups, showing median and shaded IQR; see CalAg soil health figure as example
+#(2) make in-depth month-long plot of Jan and Mar 7-d Flood-MAR for 2017 for Parlier and Shafter, comparing business-as-usual and 7-d frequency, showing daily net-min, daily denitrification, daily NO3 leaching, and total profile NO3 for typical loamy soil [four plots total, with 8 lines on each plot, one]
+#(3) summarize monthly denitrification, net mineralization, and leaching by soil x climate x scenario [aggregation step complete]
+#(4) what happens if you apply 15-cm in October to promote denitrification (knowledge of wet winter coming)?
